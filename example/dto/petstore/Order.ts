@@ -5,7 +5,7 @@
  * and use `yarn brij dto` to regenerate this file.
  */
 
-import { JSONSchema } from 'brij'
+import { JSONSchema } from '@kong/brij'
 
 export interface Order {
   id?: number
