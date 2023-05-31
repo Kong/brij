@@ -12,12 +12,12 @@ Compatible with Swagger 2.0 and OpenAPI 3.0 Specifications (OAS)
 
 npm
 ```sh
-npm install brij
+npm install @kong/brij
 ```
 
 yarn
 ```sh
-yarn add brij
+yarn add @kong/brij
 ```
 
 ## CLI

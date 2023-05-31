@@ -1,14 +1,14 @@
 {
-    "name": "brij",
+    "name": "@kong/brij",
     "version": "0.0.15",
     "description": "build responsively in json-schema",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
-    "author": "Mierenga",
+    "author": "Kong",
     "license": "apache-2.0",
     "repository": {
         "type": "git",
-        "url": "https://github.com/distrowork/brij"
+        "url": "https://github.com/kong/brij"
     },
     "bin": {
         "brij": "bin/cli.js"
