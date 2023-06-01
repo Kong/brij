@@ -47,6 +47,7 @@ Arguments:
 
 Options:
   --schemas <string>  JSON path to the section in the OAS with the JSON schemas, e.g. '#/definitions'
+  --remove-circular   whether to remove circular references from schemas and treat them as generic objects, rather than fail to generate specs with circular references
   -h, --help          display help for command
 ```
 
