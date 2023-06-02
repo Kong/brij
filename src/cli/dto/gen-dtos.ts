@@ -92,25 +92,6 @@ export class GenDTOs {
   }) {
     const oas = await GenDTOs.parseOAS(args.fileContent)
 
-    try {
-      JSON.stringify(oas.components.schemas)
-    } catch (e: any) {
-      if (e.message.includes('Converting circular structure to JSON')) {
-        if (!args.removeCircular) {
-          console.error('\nUnable to process OpenAPI spec, found circular references in schema definitions. Circular references in schemas cannot be validated in the generated DTOs.\n\nUse --remove-circular to transform circular references into generic { "type": "object" } schemas\n\n')
-          throw e
-        }
-      }
-    }
-
-    if (args.removeCircular) {
-      const circularRefs = GenDTOs.removeCircularReferences(oas.components.schemas)
-
-      if (circularRefs.length) {
-        console.log(`  - Removed circular references from schemas: ${JSON.stringify(circularRefs, null, 2)}`)
-      }
-    }
-
     const lookup = args.schemasJSONPath.split('/').slice(1)
 
     let current: any = oas
@@ -126,6 +107,26 @@ export class GenDTOs {
         break
       }
     }
+
+    try {
+      JSON.stringify(current)
+    } catch (e: any) {
+      if (e.message.includes('Converting circular structure to JSON')) {
+        if (!args.removeCircular) {
+          console.error('\nUnable to process OpenAPI spec, found circular references in schema definitions. Circular references in schemas cannot be validated in the generated DTOs.\n\nUse --remove-circular to transform circular references into generic { "type": "object" } schemas\n\n')
+          throw e
+        }
+      }
+    }
+
+    if (args.removeCircular) {
+      const circularRefs = GenDTOs.removeCircularReferences(current)
+
+      if (circularRefs.length) {
+        console.log(`  - Removed circular references from schemas: ${JSON.stringify(circularRefs, null, 2)}`)
+      }
+    }
+
 
     return current
   }
