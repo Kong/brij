@@ -322,5 +322,29 @@ describe('GenDTOs', () => {
         ]
       })
     })
+
+    it('skips replacing property definitions with key name "nullable"', () => {
+      const input = {
+        type: 'object',
+        properties: {
+          nullable: {
+            type: 'boolean',
+            nullable: true,
+          }
+        }
+      }
+
+      expect(GenDTOs.replaceNullables(input)).toEqual({
+        type: 'object',
+        properties: {
+          nullable: {
+            oneOf: [
+              { type: 'null' },
+              { type: 'boolean' },
+            ]
+          }
+        }
+      })
+    })
   })
 })
