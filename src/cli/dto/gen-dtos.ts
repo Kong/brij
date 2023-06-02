@@ -33,7 +33,7 @@ export class GenDTOs {
     return fileContent
   }
 
-  private static removeCircularReferences(obj: any): CircularRefInfo[] {
+  static removeCircularReferences(obj: any): CircularRefInfo[] {
     const keyPath: string[] = []
     const objectArray: any[] = []
     const objectSet = new Set()
