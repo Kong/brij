@@ -3,10 +3,16 @@ export interface FileConfig {
     outputDirectory: string;
     filename: string;
     schemasJSONPath?: string;
+    removeCircular?: boolean;
+}
+export interface CircularRefInfo {
+    reference: string;
+    original: string;
 }
 export declare class GenDTOs {
     private static getAbsPath;
     private static getFileContent;
+    static removeCircularReferences(obj: any): CircularRefInfo[];
     private static getSchemasFromOAS;
     private static parseOAS;
     /**
