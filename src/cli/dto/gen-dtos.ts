@@ -85,6 +85,44 @@ export class GenDTOs {
     return circularRefs
   }
 
+  static replaceNullables(obj: any): any {
+    if (!obj || typeof obj !== 'object') {
+      return
+    }
+
+    let output = JSON.parse(JSON.stringify(obj))
+
+    function traverseChildren(value: any, parentKey: string, parent: any) {
+      for (const k in value) {
+        if (value.hasOwnProperty(k)) {
+          if (value[k] && typeof value[k] === 'object') {
+            traverseChildren(value[k], k, value)
+          } else if (k === 'nullable' && value[k] === true && parentKey !== 'properties') {
+            delete value[k]
+
+            const newValue = {
+              oneOf: [
+                { type: 'null' },
+                value
+              ]
+            }
+
+            if (!parent) {
+              output = newValue
+            } else {
+              parent[parentKey] = newValue
+            }
+          }
+
+        }
+      }
+    }
+
+    traverseChildren(output, '', null)
+
+    return output
+  }
+
   private static async getSchemasFromOAS(args: {
     fileContent: string
     schemasJSONPath: string
@@ -127,8 +165,7 @@ export class GenDTOs {
       }
     }
 
-
-    return current
+    return GenDTOs.replaceNullables(current)
   }
 
   private static async parseOAS(content: string) {
