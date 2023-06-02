@@ -13,6 +13,7 @@ export declare class GenDTOs {
     private static getAbsPath;
     private static getFileContent;
     static removeCircularReferences(obj: any): CircularRefInfo[];
+    static replaceNullables(obj: any): any;
     private static getSchemasFromOAS;
     private static parseOAS;
     /**

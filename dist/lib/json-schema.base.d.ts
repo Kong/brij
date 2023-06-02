@@ -1,5 +1,4 @@
 import { ErrorObject } from 'ajv';
-import { JSONSchema7 } from 'json-schema';
 export declare const ajv: import("ajv/dist/core").default;
 export declare const ajvRemoveAdditional: import("ajv/dist/core").default;
 export interface ValidationResult {
@@ -11,8 +10,8 @@ export declare class JSONSchema {
     private _validate;
     private _removeAdditional;
     get ajv(): import("ajv/dist/core").default;
-    get schema(): JSONSchema7;
-    constructor(schema: JSONSchema7);
+    get schema(): any;
+    constructor(schema: any);
     validate(o: any): ValidationResult;
     removeAdditional<T>(o: T): T;
 }
