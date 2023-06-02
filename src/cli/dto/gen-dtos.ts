@@ -100,10 +100,6 @@ export class GenDTOs {
           console.error('\nUnable to process OpenAPI spec, found circular references in schema definitions. Circular references in schemas cannot be validated in the generated DTOs.\n\nUse --remove-circular to transform circular references into generic { "type": "object" } schemas\n\n')
           throw e
         }
-      } else {
-        console.error('Unable to process OpenAPI spec, invalid schemas object.')
-
-        throw e
       }
     }
 
