@@ -20,6 +20,44 @@ class GenDTOs {
         const fileContent = fs_1.default.readFileSync(absPath).toString();
         return fileContent;
     }
+    static removeCircularReferences(obj) {
+        const keyPath = [];
+        const objectArray = [];
+        const objectSet = new Set();
+        const circularRefs = [];
+        function isCircular(value, key) {
+            if (typeof value !== 'object') {
+                return false;
+            }
+            if (objectSet.has(value)) {
+                const objIndex = objectArray.indexOf(value);
+                const reference = `${keyPath.join('/')}/${key}`;
+                const original = keyPath.slice(0, objIndex + 1).join('/');
+                return { reference, original };
+            }
+            keyPath.push(key);
+            objectArray.push(value);
+            objectSet.add(value);
+            for (const k in value) {
+                if (value.hasOwnProperty(k)) {
+                    const circular = isCircular(value[k], k);
+                    if (circular) {
+                        circularRefs.push(circular);
+                        value[k] = {
+                            type: 'object',
+                            _circularRef: circular.original
+                        };
+                    }
+                }
+            }
+            keyPath.pop();
+            objectArray.pop();
+            objectSet.delete(value);
+            return false;
+        }
+        isCircular(obj, '.');
+        return circularRefs;
+    }
     static async getSchemasFromOAS(args) {
         const oas = await GenDTOs.parseOAS(args.fileContent);
         const lookup = args.schemasJSONPath.split('/').slice(1);
@@ -32,6 +70,23 @@ class GenDTOs {
             current = current[prop];
             if (!current) {
                 break;
+            }
+        }
+        try {
+            JSON.stringify(current);
+        }
+        catch (e) {
+            if (e.message.includes('Converting circular structure to JSON')) {
+                if (!args.removeCircular) {
+                    console.error('\nUnable to process OpenAPI spec, found circular references in schema definitions. Circular references in schemas cannot be validated in the generated DTOs.\n\nUse --remove-circular to transform circular references into generic { "type": "object" } schemas\n\n');
+                    throw e;
+                }
+            }
+        }
+        if (args.removeCircular) {
+            const circularRefs = GenDTOs.removeCircularReferences(current);
+            if (circularRefs.length) {
+                console.log(`  - Removed circular references from schemas: ${JSON.stringify(circularRefs, null, 2)}`);
             }
         }
         return current;
@@ -84,7 +139,8 @@ class GenDTOs {
             fileContent,
             schemasJSONPath: typeof config.schemasJSONPath === 'string'
                 ? config.schemasJSONPath
-                : DEFAULT_SCHEMAS_JSON_PATH
+                : DEFAULT_SCHEMAS_JSON_PATH,
+            removeCircular: config.removeCircular || false
         });
         if (!schemas) {
             console.warn(`no schemas found at JSON path '${config.schemasJSONPath}' in oas at ${sourceAbsPath}`);
