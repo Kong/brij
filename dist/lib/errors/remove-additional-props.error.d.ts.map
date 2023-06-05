@@ -1,1 +1,0 @@
-{"version":3,"file":"remove-additional-props.error.d.ts","sourceRoot":"","sources":["../../../src/lib/errors/remove-additional-props.error.ts"],"names":[],"mappings":"AAAA;;;;;GAKG;AACH,qBAAa,0BAA2B,SAAQ,KAAK;IAChC,gBAAgB,EAAE,GAAG;IAAS,MAAM,EAAE,GAAG;gBAAzC,gBAAgB,EAAE,GAAG,EAAS,MAAM,EAAE,GAAG;CAG7D"}

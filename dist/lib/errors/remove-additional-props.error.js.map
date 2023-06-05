@@ -1,1 +1,0 @@
-{"version":3,"file":"remove-additional-props.error.js","sourceRoot":"","sources":["../../../src/lib/errors/remove-additional-props.error.ts"],"names":[],"mappings":";;;AAAA;;;;;GAKG;AACH,MAAa,0BAA2B,SAAQ,KAAK;IAChC;IAA8B;IAAjD,YAAmB,gBAAqB,EAAS,MAAW;QAC1D,KAAK,CAAC,6DAA6D,CAAC,CAAA;QADnD,qBAAgB,GAAhB,gBAAgB,CAAK;QAAS,WAAM,GAAN,MAAM,CAAK;IAE5D,CAAC;CACF;AAJD,gEAIC"}
