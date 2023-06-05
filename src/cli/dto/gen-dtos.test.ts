@@ -124,4 +124,227 @@ describe('GenDTOs', () => {
       })
     })
   })
+
+  describe('replaceNullables', () => {
+    it('finds nullable objects in top-level and replaces with oneOf', () => {
+      const input = {
+        nullable: true,
+        type: 'object',
+        properties: {
+          a: {
+            type: 'string'
+          }
+        },
+      }
+
+      expect(GenDTOs.replaceNullables(input)).toEqual({
+        oneOf: [
+          { type: 'null' },
+          {
+            type: 'object',
+            properties: {
+              a: {
+                type: 'string'
+              }
+            }
+          }
+        ]
+      })
+    })
+
+    it('finds nullable objects in nested-levels and replaces with oneOf', () => {
+      const input = {
+        type: 'object',
+        properties: {
+          a: {
+            type: 'string',
+            nullable: true,
+            format: 'date',
+          },
+          b: {
+            type: 'object',
+            nullable: true,
+            properties: {
+              x: {
+                oneOf: [
+                  {
+                    nullable: true,
+                    type: 'string',
+                    maxLength: 4,
+                  },
+                  {
+                    nullable: true,
+                    type: 'number',
+                    minimum: 100,
+                  }
+                ]
+              }
+            }
+          }
+        },
+      }
+
+      expect(GenDTOs.replaceNullables(input)).toEqual({
+        type: 'object',
+        properties: {
+          a: {
+            oneOf: [
+              { type: 'null' },
+              { type: 'string', format: 'date' }
+            ]
+          },
+          b: {
+            oneOf: [
+              { type: 'null' },
+              {
+                type: 'object',
+                properties: {
+                  x: {
+                    oneOf: [
+                      {
+                        oneOf: [
+                          { type: 'null' },
+                          { type: 'string', maxLength: 4 },
+                        ],
+                      },
+                      {
+                        oneOf: [
+                          { type: 'null' },
+                          { type: 'number', minimum: 100 },
+                        ],
+                      },
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      })
+    })
+
+    it('finds nullable objects in arrays and replaces with oneOf', () => {
+      const input = {
+        anyOf: [
+          {
+            nullable: true,
+            type: 'object',
+            properties: {
+              a: {
+                type: 'string'
+              }
+            },
+          },
+          {
+            type: 'string'
+          }
+        ]
+      }
+
+      expect(GenDTOs.replaceNullables(input)).toEqual({
+        anyOf: [
+          {
+            oneOf: [
+              { type: 'null' },
+              {
+                type: 'object',
+                properties: {
+                  a: {
+                    type: 'string'
+                  }
+                }
+              }
+            ]
+          },
+          {
+            type: 'string'
+          }
+        ]
+      })
+    })
+
+    it('only replaces when nullable property is true', () => {
+      const input = {
+        anyOf: [
+          {
+            nullable: true,
+            type: 'string'
+          },
+          {
+            nullable: false,
+            type: 'string'
+          },
+          {
+            nullable: 'eh',
+            type: 'string'
+          },
+          {
+            type: 'string'
+          },
+          {
+            nullable: null,
+            type: 'string'
+          },
+          {
+            nullable: undefined,
+            type: 'string'
+          },
+        ]
+      }
+
+      expect(GenDTOs.replaceNullables(input)).toEqual({
+        anyOf: [
+          {
+            oneOf: [
+              { type: 'null'},
+              { type: 'string' },
+            ]
+          },
+          {
+            nullable: false,
+            type: 'string'
+          },
+          {
+            nullable: 'eh',
+            type: 'string'
+          },
+          {
+            type: 'string'
+          },
+          {
+            nullable: null,
+            type: 'string'
+          },
+          {
+            nullable: undefined,
+            type: 'string'
+          },
+        ]
+      })
+    })
+
+    it('skips replacing property definitions with key name "nullable"', () => {
+      const input = {
+        type: 'object',
+        properties: {
+          nullable: {
+            type: 'boolean',
+            nullable: true,
+          }
+        }
+      }
+
+      expect(GenDTOs.replaceNullables(input)).toEqual({
+        type: 'object',
+        properties: {
+          nullable: {
+            oneOf: [
+              { type: 'null' },
+              { type: 'boolean' },
+            ]
+          }
+        }
+      })
+    })
+  })
 })

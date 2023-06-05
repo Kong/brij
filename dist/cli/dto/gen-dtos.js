@@ -58,6 +58,38 @@ class GenDTOs {
         isCircular(obj, '.');
         return circularRefs;
     }
+    static replaceNullables(obj) {
+        if (!obj || typeof obj !== 'object') {
+            return;
+        }
+        let output = JSON.parse(JSON.stringify(obj));
+        function traverseChildren(value, parentKey, parent) {
+            for (const k in value) {
+                if (value.hasOwnProperty(k)) {
+                    if (value[k] && typeof value[k] === 'object') {
+                        traverseChildren(value[k], k, value);
+                    }
+                    else if (k === 'nullable' && value[k] === true && parentKey !== 'properties') {
+                        delete value[k];
+                        const newValue = {
+                            oneOf: [
+                                { type: 'null' },
+                                value
+                            ]
+                        };
+                        if (!parent) {
+                            output = newValue;
+                        }
+                        else {
+                            parent[parentKey] = newValue;
+                        }
+                    }
+                }
+            }
+        }
+        traverseChildren(output, '', null);
+        return output;
+    }
     static async getSchemasFromOAS(args) {
         const oas = await GenDTOs.parseOAS(args.fileContent);
         const lookup = args.schemasJSONPath.split('/').slice(1);
@@ -89,7 +121,7 @@ class GenDTOs {
                 console.log(`  - Removed circular references from schemas: ${JSON.stringify(circularRefs, null, 2)}`);
             }
         }
-        return current;
+        return GenDTOs.replaceNullables(current);
     }
     static async parseOAS(content) {
         const parsers = {
