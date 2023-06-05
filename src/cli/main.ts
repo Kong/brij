@@ -34,6 +34,7 @@ program.command('dto')
   .argument('output <string>', 'output directory for generated TypeScript files')
   .option('--schemas <string>', 'JSON path to the section in the OAS with the JSON schemas, e.g. \'#/definitions\'')
   .option('--remove-circular', 'whether to remove circular references from schemas and treat them as generic objects, rather than fail to generate specs with circular references')
+  .option('--no-index-files', 'skip generation of index.ts files that auto-export all exports in each file in each directory')
   .action(async(schemaDirectory: string, outputDirectory: string, options: Record<string, any>) => {
     const absRoot = path.resolve(schemaDirectory)
 
@@ -59,6 +60,7 @@ Generating DTOs from JSON schemas
         filename: basename,
         schemasJSONPath: options.schemas,
         removeCircular: options.removeCircular || false,
+        skipIndexFile: !options.indexFiles,
       })
 
       result
