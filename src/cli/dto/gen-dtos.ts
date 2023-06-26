@@ -10,6 +10,7 @@ export interface FileConfig {
   filename: string
   schemasJSONPath?: string
   removeCircular?: boolean
+  skipIndexFile?: boolean
 }
 
 export interface CircularRefInfo {
@@ -248,10 +249,12 @@ export class GenDTOs {
       dtoFiles.push(key)
     }))
 
-    GenDTO.writeIndexExports({
-      outputDirectory: dtoFolder,
-      indexExportFiles: dtoFiles,
-    })
+    if (!config.skipIndexFile) {
+      GenDTO.writeIndexExports({
+        outputDirectory: dtoFolder,
+        indexExportFiles: dtoFiles,
+      })
+    }
 
     return !!dtoFiles.length
   }
