@@ -9,7 +9,9 @@ export const ajv = addFormats(new Ajv({
 export const ajvRemoveAdditional = addFormats(new Ajv({
   strictSchema: false,
   removeAdditional: true, // for more info see https://ajv.js.org/guide/modifying-data.html
+  allErrors: true,
 }))
+
 
 export interface ValidationResult {
   valid: boolean
@@ -53,15 +55,26 @@ export class JSONSchema {
     }
   }
 
-  removeAdditional<T>(o: T): T {
+  removeAdditional<T>(o: T, options: {
+    strict?: boolean
+    errorLogger?: (s: string) => void
+  } = {}): T|never {
     // This mutates the object by removing properties that aren't in the schema
     const valid = this._removeAdditional(o)
 
+    const error = new RemoveAdditionalPropsError(
+      this._removeAdditional.errors,
+      this.schema
+    )
+
     if (!valid) {
-      throw new RemoveAdditionalPropsError(
-        this._removeAdditional.errors,
-        this.schema
-      )
+      if (options.errorLogger) {
+        options.errorLogger(`Invalid object found when using removeAdditional(): ${JSON.stringify(error.validationErrors.map((err: any) => `${err?.schemaPath}: ${err?.message}`))}`)
+      }
+
+      if (options.strict) {
+        throw error
+      }
     }
 
     return o

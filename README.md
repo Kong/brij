@@ -139,13 +139,43 @@ export function test(input: any): ApiResponse|never {
 ```
 
 To strip additional properties from an object to ensure it matches the JSON schema definition:
+
+> Note: you must use `additionalProperties: false` or similar to have properties be removed, since otherwise they will still be valid properties
+
+```ts
+import { ApiResponse } from '../dto/ApiResponse'
+
+export function removeAdditonalProperties(input: ApiResponse): ApiResponse|never {
+  // This mutates (and returns) the input object.
+  // Properties not allowed in the JSON schema have been removed.
+  // By default, any unrelated validation issues (e.g. missing required props, invalid types) are ignored.
+  // Validation issues unrelated to additionalProperties can be surfaced using either `errorLogger` or `strict` option (see below).
+  return ApiResponse.removeAdditional(input)
+}
+```
+
+
+##### `errorLogger` option
+
+```ts
+import { ApiResponse } from '../dto/ApiResponse'
+
+export function removeAdditonalProperties(input: ApiResponse): ApiResponse|never {
+  // Pass a function to log validation errors unrelated to additionalProperties with.
+  return ApiResponse.removeAdditional(input, { errorLogger: console.log })
+}
+```
+
+##### `strict` option
+
 ```ts
 import { ApiResponse, RemoveAdditionalPropsError } from '../dto/ApiResponse'
 
 export function removeAdditonalProperties(input: ApiResponse): ApiResponse|never {
   try {
-    // This mutates (and returns) the input object
-    ApiResponse.removeAdditional(input)
+    // Set `strict` to true to throw a RemoveAdditionalPropsError if there are validation
+    // errors unrelated to additionalProperties.
+    ApiResponse.removeAdditional(input, { strict: true })
   } catch (e: unknown) {
     if (e instanceof RemoveAdditionalPropsError) {
       console.error(`error removing additional props: ${e.message}`)
