@@ -192,7 +192,7 @@ describe('JSONSchema', () => {
   })
 
   describe('removeAdditional', () => {
-    it('throws RemoveAdditionalPropsError when input is invalid', () => {
+    it('doesn\'t throw when input is invalid', () => {
       const jsonSchema = new JSONSchema({
         type: 'object',
         additionalProperties: false,
@@ -202,14 +202,36 @@ describe('JSONSchema', () => {
         }
       })
 
-      expect(() => jsonSchema.removeAdditional({})).toThrow(RemoveAdditionalPropsError)
-      expect(() => jsonSchema.removeAdditional({ b: 7 })).toThrow(RemoveAdditionalPropsError)
-      expect(() => jsonSchema.removeAdditional({ a: 'n' })).toThrow(RemoveAdditionalPropsError)
+      // invalid
+      expect(jsonSchema.removeAdditional({})).toEqual({})
+      expect(jsonSchema.removeAdditional({ yo: 'there', a: 'n', b: 7, c: 'nope' })).toEqual({ a: 'n' })
+      expect(jsonSchema.removeAdditional({ a: 'n' })).toEqual({ a: 'n' })
+
+      // valid
+      expect(jsonSchema.removeAdditional({ a: 7 })).toEqual({ a: 7 })
+    })
+
+    it('throws when input is invalid and "strict" option is used', () => {
+      const jsonSchema = new JSONSchema({
+        type: 'object',
+        additionalProperties: false,
+        required: ['a'],
+        properties: {
+          a: { type: 'number' },
+        }
+      })
+
+      // invalid
+      expect(() => jsonSchema.removeAdditional({}, { strict: true })).toThrow(RemoveAdditionalPropsError)
+      expect(() => jsonSchema.removeAdditional({ b: 7 }, { strict: true })).toThrow(RemoveAdditionalPropsError)
+      expect(() => jsonSchema.removeAdditional({ a: 'n' }, { strict: true })).toThrow(RemoveAdditionalPropsError)
+
+      // valid
       expect(() => jsonSchema.removeAdditional({ a: 7 })).not.toThrow(RemoveAdditionalPropsError)
     })
 
     it('removes disallowed properties when additionalProperties is false', () => {
-      const jsonShema = new JSONSchema({
+      const jsonSchema = new JSONSchema({
         type: 'object',
         additionalProperties: false,
         properties: {
@@ -217,24 +239,94 @@ describe('JSONSchema', () => {
         }
       })
 
-        expect(jsonShema.removeAdditional({})).toEqual({})
-        expect(jsonShema.removeAdditional({ a: 1, b: 7, c: 4 })).toEqual({ a: 1 })
-        expect(jsonShema.removeAdditional({ b: 7 })).toEqual({})
-        expect(jsonShema.removeAdditional({ a: 7 })).toEqual({ a: 7 })
+      expect(jsonSchema.removeAdditional({})).toEqual({})
+      expect(jsonSchema.removeAdditional({ a: 1, b: 7, c: 4 })).toEqual({ a: 1 })
+      expect(jsonSchema.removeAdditional({ b: 7 })).toEqual({})
+      expect(jsonSchema.removeAdditional({ a: 7 })).toEqual({ a: 7 })
+    })
+
+    it('removes disallowed properties when additionalProperties is false and object is otherwise invalid', () => {
+      const jsonSchema = new JSONSchema({
+        type: 'object',
+        additionalProperties: false,
+        required: ['a'],
+        properties: {
+          a: { type: 'number' },
+        }
+      })
+
+      // missing required prop a
+      expect(jsonSchema.removeAdditional({})).toEqual({})
+
+      // prop a is wrong type, still removes unallowed props b & c
+      expect(jsonSchema.removeAdditional({ a: 'not_a_number', b: 7, c: 4 })).toEqual({ a: 'not_a_number' })
+
+      // missing required prop a, still removes unallowed prop b
+      expect(jsonSchema.removeAdditional({ b: 7 })).toEqual({})
     })
 
     it('retains additional properties when additionalProperties is not explicitly true', () => {
-      const jsonShema = new JSONSchema({
+      const jsonSchema = new JSONSchema({
         type: 'object',
         properties: {
           a: { type: 'number' }
         }
       })
 
-      expect(jsonShema.removeAdditional({})).toEqual({})
-      expect(jsonShema.removeAdditional({ b: 7 })).toEqual({ b: 7 })
-      expect(jsonShema.removeAdditional({ a: 7, b: 4, c: 3 })).toEqual({ a: 7, b: 4, c: 3 })
-      expect(jsonShema.removeAdditional({ a: 7 })).toEqual({ a: 7 })
+      expect(jsonSchema.removeAdditional({})).toEqual({})
+      expect(jsonSchema.removeAdditional({ b: 7 })).toEqual({ b: 7 })
+      expect(jsonSchema.removeAdditional({ a: 7, b: 4, c: 3 })).toEqual({ a: 7, b: 4, c: 3 })
+      expect(jsonSchema.removeAdditional({ a: 7 })).toEqual({ a: 7 })
+    })
+
+    it('calls the errorLogger when input is invalid', () => {
+      const jsonSchema = new JSONSchema({
+        type: 'object',
+        required: ['a'],
+        additionalProperties: false,
+        properties: {
+          a: { type: 'number' },
+          z: { type: 'string' }
+        }
+      })
+
+      const errorLogger = jest.fn((_message: string) => {})
+
+      // object is invalid because it prop a is the wrong type
+      expect(jsonSchema.removeAdditional({ a: 'n' }, { errorLogger })).toEqual({ a: 'n' })
+
+      expect(errorLogger).toHaveBeenCalledWith('Invalid object found when using removeAdditional(): ["#/properties/a/type: must be number"]')
+      errorLogger.mockClear()
+
+      // object is invalid because it doesn't have required prop a
+      expect(jsonSchema.removeAdditional({}, { errorLogger })).toEqual({})
+
+      expect(errorLogger).toHaveBeenCalledWith('Invalid object found when using removeAdditional(): ["#/required: must have required property \'a\'"]')
+      errorLogger.mockClear()
+
+      // object is invalid because it doesn't have required prop a and has wrong type for prop z
+      expect(jsonSchema.removeAdditional({ z: 8 }, { errorLogger })).toEqual({ z: 8 })
+
+      expect(errorLogger).toHaveBeenCalledWith('Invalid object found when using removeAdditional(): ["#/required: must have required property \'a\'","#/properties/z/type: must be string"]')
+      errorLogger.mockClear()
+
+      // object is invalid because it doesn't have required prop a
+      expect(jsonSchema.removeAdditional({ b: 7 }, { errorLogger })).toEqual({})
+
+      expect(errorLogger).toHaveBeenCalledWith('Invalid object found when using removeAdditional(): ["#/required: must have required property \'a\'"]')
+      errorLogger.mockClear()
+
+      // object is valid since additional props will be removed making it valid
+      expect(jsonSchema.removeAdditional({ a: 7, b: 4, c: 3 }, { errorLogger })).toEqual({ a: 7 })
+
+      expect(errorLogger).not.toHaveBeenCalledWith()
+      errorLogger.mockClear()
+
+      // object is valid
+      expect(jsonSchema.removeAdditional({ a: 7 }, { errorLogger })).toEqual({ a: 7 })
+
+      expect(errorLogger).not.toHaveBeenCalled()
+      errorLogger.mockClear()
     })
   })
 })
