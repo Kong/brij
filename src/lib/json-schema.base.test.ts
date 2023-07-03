@@ -328,5 +328,142 @@ describe('JSONSchema', () => {
       expect(errorLogger).not.toHaveBeenCalled()
       errorLogger.mockClear()
     })
+
+    it('calls logger.error when input is invalid', () => {
+      const jsonSchema = new JSONSchema({
+        type: 'object',
+        required: ['a'],
+        additionalProperties: false,
+        properties: {
+          a: { type: 'number' },
+          z: { type: 'string' }
+        }
+      })
+
+      const mockFn = jest.fn()
+
+      class Logger {
+        error(s: string) { mockFn(s) }
+      }
+
+      const logger = new Logger()
+
+      // object is invalid because it prop a is the wrong type
+      expect(jsonSchema.removeAdditional({ a: 'n' }, { logger })).toEqual({ a: 'n' })
+
+      expect(mockFn).toHaveBeenCalledWith('Invalid object found when using removeAdditional(): ["#/properties/a/type: must be number"]')
+      mockFn.mockClear()
+
+      // object is invalid because it doesn't have required prop a
+      expect(jsonSchema.removeAdditional({}, { logger })).toEqual({})
+
+      expect(mockFn).toHaveBeenCalledWith('Invalid object found when using removeAdditional(): ["#/required: must have required property \'a\'"]')
+      mockFn.mockClear()
+
+      // object is invalid because it doesn't have required prop a and has wrong type for prop z
+      expect(jsonSchema.removeAdditional({ z: 8 }, { logger })).toEqual({ z: 8 })
+
+      expect(mockFn).toHaveBeenCalledWith('Invalid object found when using removeAdditional(): ["#/required: must have required property \'a\'","#/properties/z/type: must be string"]')
+      mockFn.mockClear()
+
+      // object is invalid because it doesn't have required prop a
+      expect(jsonSchema.removeAdditional({ b: 7 }, { logger })).toEqual({})
+
+      expect(mockFn).toHaveBeenCalledWith('Invalid object found when using removeAdditional(): ["#/required: must have required property \'a\'"]')
+      mockFn.mockClear()
+
+      // object is valid since additional props will be removed making it valid
+      expect(jsonSchema.removeAdditional({ a: 7, b: 4, c: 3 }, { logger })).toEqual({ a: 7 })
+
+      expect(mockFn).not.toHaveBeenCalledWith()
+      mockFn.mockClear()
+
+      // object is valid
+      expect(jsonSchema.removeAdditional({ a: 7 }, { logger })).toEqual({ a: 7 })
+
+      expect(mockFn).not.toHaveBeenCalled()
+      mockFn.mockClear()
+    })
+
+    it('correctly calls the errorLogger when it is an instance method', () => {
+      const jsonSchema = new JSONSchema({
+        type: 'object',
+        required: ['a'],
+        additionalProperties: false,
+        properties: {
+          a: { type: 'number' },
+          z: { type: 'string' }
+        }
+      })
+
+      const mockFn = jest.fn()
+
+      class Logger {
+        error(s: string) {
+          mockFn()
+        }
+      }
+
+      const errorLogger = new Logger()
+
+      // object is invalid because it prop a is the wrong type
+      expect(jsonSchema.removeAdditional({ a: 'n' }, { errorLogger: errorLogger.error })).toEqual({ a: 'n' })
+
+      expect(mockFn).toBeCalled()
+    })
+
+    it('does not throw if errorLogger throws', () => {
+      const jsonSchema = new JSONSchema({
+        type: 'object',
+        required: ['a'],
+        additionalProperties: false,
+        properties: {
+          a: { type: 'number' },
+          z: { type: 'string' }
+        }
+      })
+
+      const mockFn = jest.fn()
+
+      // object is invalid because it prop a is the wrong type
+      expect(
+        () => jsonSchema.removeAdditional({ a: 'n' }, {
+          errorLogger: () => {
+            mockFn()
+            throw new Error()
+          }
+        })
+      ).not.toThrow()
+
+      expect(mockFn).toBeCalled()
+    })
+
+    it('does not throw if logger.error throws', () => {
+      const jsonSchema = new JSONSchema({
+        type: 'object',
+        required: ['a'],
+        additionalProperties: false,
+        properties: {
+          a: { type: 'number' },
+          z: { type: 'string' }
+        }
+      })
+
+      const mockFn = jest.fn()
+
+      // object is invalid because it prop a is the wrong type
+      expect(
+        () => jsonSchema.removeAdditional({ a: 'n' }, {
+          logger: {
+            error: () => {
+              mockFn()
+              throw new Error()
+            }
+          }
+        })
+      ).not.toThrow()
+
+      expect(mockFn).toBeCalled()
+    })
   })
 })
