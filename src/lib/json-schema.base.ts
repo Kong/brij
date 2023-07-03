@@ -57,6 +57,7 @@ export class JSONSchema {
 
   removeAdditional<T>(o: T, options: {
     strict?: boolean
+    logger?: { error: (s: string) => void }
     errorLogger?: (s: string) => void
   } = {}): T|never {
     // This mutates the object by removing properties that aren't in the schema
@@ -68,8 +69,16 @@ export class JSONSchema {
     )
 
     if (!valid) {
-      if (options.errorLogger) {
-        options.errorLogger(`Invalid object found when using removeAdditional(): ${JSON.stringify(error.validationErrors.map((err: any) => `${err?.schemaPath}: ${err?.message}`))}`)
+      try {
+        const message = `Invalid object found when using removeAdditional(): ${JSON.stringify(error.validationErrors.map((err: any) => `${err?.schemaPath}: ${err?.message}`))}`
+
+        if (options.errorLogger) {
+          options.errorLogger(message)
+        } else if (options.logger?.error) {
+          options.logger.error(message)
+        }
+      } catch (e) {
+        // invalid logger
       }
 
       if (options.strict) {
