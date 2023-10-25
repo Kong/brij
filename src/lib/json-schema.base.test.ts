@@ -213,6 +213,21 @@ describe('JSONSchema', () => {
       }])
     })
 
+    it('validates data uri formats', () => {
+      const jsonSchema = new JSONSchema({
+        type: 'object',
+        required: [ 'data' ],
+        properties: {
+          data: { type: 'string', format: 'uri' },
+        }
+      })
+
+      expect(jsonSchema.validate({ data: 'hello' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'data:hello' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'data:image/png,hello' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'data:image/png;base64,hello' }).valid).toBe(true)
+    })
+
     it('includes error information in the output object', () => {
       const jsonSchema = new JSONSchema({
         type: 'object',
