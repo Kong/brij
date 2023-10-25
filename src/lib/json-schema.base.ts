@@ -3,10 +3,12 @@ import addFormats from 'ajv-formats'
 import { RemoveAdditionalPropsError } from './errors/remove-additional-props.error'
 
 export const ajv = addFormats(new Ajv({
+  discriminator: true,
   strictSchema: false
 }))
 
 export const ajvRemoveAdditional = addFormats(new Ajv({
+  discriminator: true,
   strictSchema: false,
   removeAdditional: true, // for more info see https://ajv.js.org/guide/modifying-data.html
   allErrors: true,
