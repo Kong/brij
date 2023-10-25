@@ -103,6 +103,7 @@ export interface ApiResponse {
 class ApiResponseSchema extends JSONSchema {
   constructor() {
     super({
+      "x-message": "This is a custom error message that will be returned when validation fails"
       "type": "object",
       "properties": {
         "code": {
@@ -131,6 +132,26 @@ export function test(input: any): ApiResponse|never {
 
   if (!valid) {
     throw new Error(JSON.stringify(errors))
+  }
+
+  // Since it is a valid ApiResponse object, we can confidently cast it the expected type
+  return input as ApiResponse
+}
+```
+
+##### Using a custom `x-message` property in a schema
+
+```ts
+import { ApiResponse } from '../dto/ApiResponse'
+
+export function test(input: any): ApiResponse|never {
+  const {valid, errors, customMessage} = ApiResponse.validate(input)
+
+  if (!valid) {
+    throw new Error(JSON.stringify({
+      message: customMessage, // This message comes from the "x-message" property on the schema
+      errors
+    }))
   }
 
   // Since it is a valid ApiResponse object, we can confidently cast it the expected type
