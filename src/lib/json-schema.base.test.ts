@@ -484,9 +484,9 @@ describe('JSONSchema', () => {
         'x-validation-message': 'This is the error message that can be accessed when failing validation'
       })
 
-      const { valid, customMessage } = jsonSchema.validate(false)
-      expect(valid).toBe(false)
-      expect(customMessage).toBe('This is the error message that can be accessed when failing validation')
+      const result = jsonSchema.validate(false)
+      expect(result.valid).toBe(false)
+      result.valid === false && expect(result.customMessage).toBe('This is the error message that can be accessed when failing validation')
     })
 
     it('includes error information in the output object', () => {

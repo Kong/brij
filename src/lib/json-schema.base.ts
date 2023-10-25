@@ -22,10 +22,14 @@ export const ajvRemoveAdditional = addFormats(new Ajv({
 }))
 
 
-export interface ValidationResult {
-  valid: boolean
+export type ValidationResult<T> = {
+  valid: false
   errors: ErrorObject<string, Record<string, any>, unknown>[] | null | undefined
   customMessage: string
+} | {
+  valid: true
+  errors: undefined
+  output: T
 }
 
 /*
@@ -35,7 +39,7 @@ export interface ValidationResult {
 
  * Provides methods for validation and removal of extra properies not allowed in the schema
  */
-export class JSONSchema {
+export class JSONSchema<T=any> {
   private static _ajv: Ajv | null = null
 
   private static _ajvRemoveAdditional: Ajv | null = null
@@ -176,9 +180,18 @@ export class JSONSchema {
    * @param o 
    * @returns ValidationResult
    */
-  validate(o: any): ValidationResult {
+  validate(o: any): ValidationResult<T> {
     const validateFunction = this.validateFunction
     const valid = validateFunction(o)
+
+    if (valid) {
+      return {
+        valid,
+        errors: undefined,
+        output: o as T,
+      }
+
+    }
 
     return {
       valid,
