@@ -40,7 +40,7 @@ import { JSONSchema } from '@kong/brij'
 
 ${generatedTsInteface}
 
-class ${key}Schema extends JSONSchema {
+class ${key}Schema extends JSONSchema<${key}> {
   constructor() {
     super(${schemaText.split('\n').join('\n    ')})
   }
