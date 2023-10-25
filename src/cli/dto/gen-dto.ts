@@ -50,7 +50,7 @@ import { JSONSchema } from '@kong/brij'
 
 ${generatedTsInteface}${typeKeyAlias ? `\n${typeKeyAlias}`: ''}
 
-class ${codifiedKey}Schema extends JSONSchema {
+class ${codifiedKey}Schema extends JSONSchema<${key}> {
   constructor() {
     super(${schemaText.split('\n').join('\n    ')})
   }
