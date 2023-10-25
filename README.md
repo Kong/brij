@@ -128,14 +128,15 @@ You can import the generated DTO into your program and use it like this:
 import { ApiResponse } from '../dto/ApiResponse'
 
 export function test(input: any): ApiResponse|never {
-  const {valid, errors} = ApiResponse.validate(input)
+  const {valid, errors, output} = ApiResponse.validate(input)
 
   if (!valid) {
     throw new Error(JSON.stringify(errors))
   }
 
-  // Since it is a valid ApiResponse object, we can confidently cast it the expected type
-  return input as ApiResponse
+  // The output is a valid ApiResponse object, and has been coerced to the correct
+  // type within the .validate() method
+  return output
 }
 ```
 
