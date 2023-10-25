@@ -228,6 +228,17 @@ describe('JSONSchema', () => {
       expect(jsonSchema.validate({ data: 'data:image/png;base64,hello' }).valid).toBe(true)
     })
 
+    it('accepts x-message property', () => {
+      const jsonSchema = new JSONSchema({
+        type: 'string',
+        'x-message': 'This is the error message that can be accessed when failing validation'
+      })
+
+      const { valid, customMessage } = jsonSchema.validate(false)
+      expect(valid).toBe(false)
+      expect(customMessage).toBe('This is the error message that can be accessed when failing validation')
+    })
+
     it('includes error information in the output object', () => {
       const jsonSchema = new JSONSchema({
         type: 'object',
