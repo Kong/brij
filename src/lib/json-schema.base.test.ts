@@ -164,6 +164,55 @@ describe('JSONSchema', () => {
       expect(jsonSchema.validate({ created_at: new Date().toISOString() }).valid).toBe(true)
     })
 
+    it('validates oneOf with discriminator', () => {
+      const jsonSchema = new JSONSchema({
+        type: 'object',
+        discriminator: {
+          propertyName: 'foo',
+        },
+        required: ['foo'],
+        oneOf: [
+          {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              foo: {
+                enum: ['x']
+              }
+            },
+          },
+          {
+            properties: {
+              foo: {enum: ['y', 'z']},
+              a: {type: 'string'},
+            },
+            required: ['a'],
+          },
+        ],
+      })
+
+      expect(jsonSchema.validate({ foo: 'x' }).valid).toBe(true)
+      expect(jsonSchema.validate({ foo: 'x', a: 'no' }).errors).toEqual([{
+        "instancePath": "",
+        "keyword": "additionalProperties",
+        "message": "must NOT have additional properties",
+        "params": {
+          "additionalProperty": "a",
+        },
+        "schemaPath": "#/oneOf/0/additionalProperties",
+      }])
+      expect(jsonSchema.validate({ foo: 'y', a: 'ok' }).valid).toBe(true)
+      expect(jsonSchema.validate({ foo: 'y', b: 'no' }).errors).toEqual([{
+        "instancePath": "",
+        "keyword": "required",
+        "message": "must have required property 'a'",
+        "params": {
+          "missingProperty": "a",
+        },
+        "schemaPath": "#/oneOf/1/required",
+      }])
+    })
+
     it('includes error information in the output object', () => {
       const jsonSchema = new JSONSchema({
         type: 'object',
