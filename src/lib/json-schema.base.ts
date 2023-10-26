@@ -55,7 +55,7 @@ export class JSONSchema {
     return {
       valid,
       errors: this._validate.errors,
-      customMessage: this._schema['x-message']
+      customMessage: this._schema['x-validation-message']
     }
   }
 

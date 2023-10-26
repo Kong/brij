@@ -103,7 +103,7 @@ export interface ApiResponse {
 class ApiResponseSchema extends JSONSchema {
   constructor() {
     super({
-      "x-message": "This is a custom error message that will be returned when validation fails"
+      "x-validation-message": "This is a custom error message that will be returned when validation fails"
       "type": "object",
       "properties": {
         "code": {
@@ -139,7 +139,7 @@ export function test(input: any): ApiResponse|never {
 }
 ```
 
-##### Using a custom `x-message` property in a schema
+##### Using a custom `x-validation-message` property in a schema
 
 ```ts
 import { ApiResponse } from '../dto/ApiResponse'
@@ -149,7 +149,7 @@ export function test(input: any): ApiResponse|never {
 
   if (!valid) {
     throw new Error(JSON.stringify({
-      message: customMessage, // This message comes from the "x-message" property on the schema
+      message: customMessage, // This message comes from the "x-validation-message" property on the schema
       errors
     }))
   }

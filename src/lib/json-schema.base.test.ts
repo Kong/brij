@@ -228,10 +228,10 @@ describe('JSONSchema', () => {
       expect(jsonSchema.validate({ data: 'data:image/png;base64,hello' }).valid).toBe(true)
     })
 
-    it('accepts x-message property', () => {
+    it('accepts x-validation-message property', () => {
       const jsonSchema = new JSONSchema({
         type: 'string',
-        'x-message': 'This is the error message that can be accessed when failing validation'
+        'x-validation-message': 'This is the error message that can be accessed when failing validation'
       })
 
       const { valid, customMessage } = jsonSchema.validate(false)
