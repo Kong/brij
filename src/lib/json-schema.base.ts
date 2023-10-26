@@ -18,6 +18,7 @@ export const ajvRemoveAdditional = addFormats(new Ajv({
 export interface ValidationResult {
   valid: boolean
   errors: ErrorObject<string, Record<string, any>, unknown>[] | null | undefined
+  customMessage: string
 }
 
 /*
@@ -53,7 +54,8 @@ export class JSONSchema {
 
     return {
       valid,
-      errors: this._validate.errors
+      errors: this._validate.errors,
+      customMessage: this._schema['x-validation-message']
     }
   }
 
