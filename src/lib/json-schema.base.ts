@@ -1,6 +1,7 @@
 import Ajv, { ErrorObject, ValidateFunction } from 'ajv'
 import addFormats from 'ajv-formats'
 import { RemoveAdditionalPropsError } from './errors/remove-additional-props.error'
+import { ScrubbableInput, ScrubbableOutput, isCreatedUpdatedAtInput } from './types'
 
 export const ajv = addFormats(new Ajv({
   discriminator: true,
@@ -35,8 +36,14 @@ export class JSONSchema {
 
   private _removeAdditional: ValidateFunction
 
+  private static ajv = ajv
+
+  static setAjv(ajv: Ajv) {
+    JSONSchema.ajv = ajv
+  }
+
   get ajv() {
-    return ajv
+    return JSONSchema.ajv
   }
 
   get schema(): any {
@@ -57,6 +64,23 @@ export class JSONSchema {
       errors: this._validate.errors,
       customMessage: this._schema['x-validation-message']
     }
+  }
+
+  scrub<T extends ScrubbableInput>(input: T, options: {
+    strict?: boolean
+    logger?: { error: (s: string) => void }
+  } = {}): ScrubbableOutput<T>|never {
+    const output = this.removeAdditional(input, options)
+
+    if (isCreatedUpdatedAtInput(output)) {
+      return {
+        ...output,
+        created_at: output.created_at?.toISOString() || '',
+        updated_at: output.updated_at?.toISOString() || '',
+      } as ScrubbableOutput<T>
+    }
+
+    return output as ScrubbableOutput<T>
   }
 
   removeAdditional<T>(o: T, options: {
