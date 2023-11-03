@@ -25,9 +25,16 @@ export class GenDTO {
     validate({})
   }
 
-  private static async renderTypeScriptDTO(jsonSchema: any, key: string) {
+  static async renderTypeScriptDTO(jsonSchema: any, key: string) {
     const generatedTsInteface = await compile(jsonSchema, key, typescriptInterfaceOptions)
     const schemaText = JSON.stringify(jsonSchema, null, 2)
+
+    // If the resolved schema title did not match the key (also if the schema was using a $ref),
+    // export a type alias for the generated schema type so that it can be referenced by the key
+    // of the input schema
+    const typeKeyAlias = jsonSchema.title && jsonSchema.title !== key
+      ? `export type ${key} = ${jsonSchema.title}`
+      : undefined
 
     return `/* eslint-disable */
 /**
@@ -38,7 +45,7 @@ export class GenDTO {
 
 import { JSONSchema } from '@kong/brij'
 
-${generatedTsInteface}
+${generatedTsInteface}${typeKeyAlias ? `\n${typeKeyAlias}`: ''}
 
 class ${key}Schema extends JSONSchema {
   constructor() {

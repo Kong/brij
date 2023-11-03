@@ -1,6 +1,6 @@
 {
   "name": "@kong/brij",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "build responsively in json-schema",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,7 +16,7 @@
   "scripts": {
     "dev": "ts-node ./src/cli/run.ts",
     "dev:watch": "nodemon --ignore example/ --exec \"ts-node\" ./src/cli/run.ts",
-    "example:dto": "yarn dev dto example/oas example/dto --schemas '\\#/definitions'",
+    "example:dto": "yarn dev dto example/oas example/dto --schemas '\\#/definitions' && yarn dev dto example/oas example/dto --schemas '\\#/components/schemas'",
     "example:dto:watch": "yarn dev:watch dto example/oas example/dto --schemas '\\#/definitions'",
     "build": "tsc -p tsconfig.build.json",
     "test": "jest",
