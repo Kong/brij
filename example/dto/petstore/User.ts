@@ -23,7 +23,7 @@ export interface User {
 }
 
 
-class UserSchema extends JSONSchema {
+class UserSchema extends JSONSchema<User> {
   constructor() {
     super({
       "type": "object",

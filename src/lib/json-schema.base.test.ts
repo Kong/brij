@@ -264,6 +264,36 @@ describe('JSONSchema', () => {
         schemaPath: '#/properties/created_at/type',
       }])
     })
+
+    it('includes a typed reference to the input in the output', () => {
+      type MySpecialType = { in: 'out' }
+
+      const jsonSchema = new JSONSchema<MySpecialType>({
+        type: 'object',
+        required: ['in'],
+        properties: {
+          in: {
+            type: 'string',
+            enum: [ 'out' ]
+          }
+        }
+      })
+
+      const input = { in: 'out' }
+
+      const result = jsonSchema.validate(input)
+
+      expect(result.valid).toEqual(true)
+
+      // Use a conditional on valid to narrow the result type down for the TS compiler.
+      // The conditional will always be true if the tests are passing.
+      if (result.valid) {
+        // This is a compile-time test to ensure that result.output is of type MySpecialType
+        const typedOutput: MySpecialType = result.output
+
+        expect(typedOutput).toBe(input)
+      }
+    })
   })
 
   describe('removeAdditional', () => {

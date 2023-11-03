@@ -15,7 +15,7 @@ export interface ApiResponse {
 }
 
 
-class ApiResponseSchema extends JSONSchema {
+class ApiResponseSchema extends JSONSchema<ApiResponse> {
   constructor() {
     super({
       "type": "object",

@@ -29,7 +29,7 @@ export interface Pet {
 }
 
 
-class PetSchema extends JSONSchema {
+class PetSchema extends JSONSchema<Pet> {
   constructor() {
     super({
       "type": "object",

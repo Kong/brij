@@ -21,7 +21,7 @@ export interface Order {
 }
 
 
-class OrderSchema extends JSONSchema {
+class OrderSchema extends JSONSchema<Order> {
   constructor() {
     super({
       "type": "object",
