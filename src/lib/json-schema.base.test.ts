@@ -264,6 +264,48 @@ describe('JSONSchema', () => {
         schemaPath: '#/properties/created_at/type',
       }])
     })
+
+    it('reports multiple errors', () => {
+      const jsonSchema = new JSONSchema({
+        type: 'object',
+        required: [ 'a', 'b' ],
+        properties: {
+          a: { type: 'string' },
+          b: { type: 'string' },
+          c: { type: 'string' },
+        }
+      })
+
+      expect(jsonSchema.validate({ c: true }).errors).toEqual([
+        {
+          instancePath: '',
+          keyword: 'required',
+          message: 'must have required property \'a\'',
+          params: {
+            missingProperty: 'a',
+          },
+          schemaPath: '#/required',
+        },
+        {
+          instancePath: '',
+          keyword: 'required',
+          message: 'must have required property \'b\'',
+          params: {
+            missingProperty: 'b',
+          },
+          schemaPath: '#/required',
+        },
+        {
+          instancePath: '/c',
+          keyword: 'type',
+          message: 'must be string',
+          params: {
+            type: 'string',
+          },
+          schemaPath: '#/properties/c/type',
+        },
+      ])
+    })
   })
 
   describe('removeAdditional', () => {

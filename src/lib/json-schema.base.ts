@@ -4,7 +4,8 @@ import { RemoveAdditionalPropsError } from './errors/remove-additional-props.err
 
 export const ajv = addFormats(new Ajv({
   discriminator: true,
-  strictSchema: false
+  strictSchema: false,
+  allErrors: true,
 }))
 
 export const ajvRemoveAdditional = addFormats(new Ajv({
