@@ -32,8 +32,10 @@ export class GenDTO {
     // If the resolved schema title did not match the key (also if the schema was using a $ref),
     // export a type alias for the generated schema type so that it can be referenced by the key
     // of the input schema
-    const typeKeyAlias = jsonSchema.title && jsonSchema.title !== key
-      ? `export type ${key} = ${jsonSchema.title}`
+    const identifier = GenDTO.makeCodeIdentifier(jsonSchema.title)
+
+    const typeKeyAlias = identifier && identifier !== key && generatedTsInteface.includes(identifier)
+      ? `export type ${key} = ${identifier}`
       : undefined
 
     return `/* eslint-disable */
@@ -92,6 +94,21 @@ export const ${key} = new ${key}Schema()
     const indexPath = path.join(args.outputDirectory, 'index.ts')
 
     fs.writeFileSync(indexPath, args.indexExportFiles.map(writeExport).join('\n') + '\n')
+  }
+
+  private static makeCodeIdentifier(s: string) {
+    if (!s) {
+      return ''
+    }
+
+    return s
+      .replace(/\s+/g, ' ')
+      .replace(/\_+/g, ' ')
+      .replace(/\-+/g, ' ')
+      .replace(/[^\w\s]/g, '')
+      .split(' ')
+      .map((s: string) => (s[0]?.toUpperCase() || '') + (s.slice(1) || ''))
+      .join('')
   }
 
 
