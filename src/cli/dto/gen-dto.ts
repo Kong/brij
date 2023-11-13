@@ -34,7 +34,7 @@ export class GenDTO {
     // of the input schema
     const identifier = GenDTO.makeCodeIdentifier(jsonSchema.title)
 
-    const typeKeyAlias = identifier && identifier !== key
+    const typeKeyAlias = identifier && identifier !== key && generatedTsInteface.includes(identifier)
       ? `export type ${key} = ${identifier}`
       : undefined
 
