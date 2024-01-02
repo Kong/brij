@@ -215,13 +215,25 @@ export class GenDTOs {
     const name = GenDTO.stripExtensions(config.filename)
     const sourceAbsPath = GenDTOs.getAbsPath(config.filename, config.sourceDirectory)
     const fileContent = GenDTOs.getFileContent(sourceAbsPath)
-    let schemas = await GenDTOs.getSchemasFromOAS({
-      fileContent,
-      schemasJSONPath: typeof config.schemasJSONPath === 'string'
-        ? config.schemasJSONPath
-        : DEFAULT_SCHEMAS_JSON_PATH,
-      removeCircular: config.removeCircular || false
-    })
+    let schemas: Record<string, any>|undefined
+
+    try {
+      schemas = await GenDTOs.getSchemasFromOAS({
+        fileContent,
+        schemasJSONPath: typeof config.schemasJSONPath === 'string'
+          ? config.schemasJSONPath
+          : DEFAULT_SCHEMAS_JSON_PATH,
+        removeCircular: config.removeCircular || false
+      })
+    } catch (e: any) {
+      if (e?.message?.startsWith('file format must be one of')) {
+        console.warn(`invalid file found at ${sourceAbsPath}: ${e.message}`)
+
+        return false
+      } else {
+        throw e
+      }
+    }
 
     if (!schemas) {
       console.warn(`no schemas found at JSON path '${config.schemasJSONPath}' in oas at ${sourceAbsPath}`)
