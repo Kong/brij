@@ -212,6 +212,62 @@ describe('JSONSchema', () => {
         "schemaPath": "#/oneOf/1/required",
       }])
     })
+    
+    it('rejects invalid string not part of a discriminator\'s enum', () => {
+      const jsonSchema = new JSONSchema({
+        type: 'object',
+        
+        allOf: [
+        {
+          type: 'object',
+          properties: {
+            foo: {
+              type: 'string'
+            }
+          },
+          required: ['foo']
+        },
+        {
+          discriminator: {
+            propertyName: 'foo',
+          },
+          oneOf: [
+            {
+              type: 'object',
+              required: ['foo'],
+              properties: {
+                foo: {
+                  enum: ['x']
+                }
+              },
+            },
+            {
+              properties: {
+                foo: {
+                  enum: ['y']
+                },
+              },
+              required: ['foo'],
+            },
+          ]
+        }
+        ]
+      })
+
+      expect(jsonSchema.validate({ foo: 'x' }).valid).toBe(true)
+      expect(jsonSchema.validate({ foo: 'z' }).valid).toBe(false)
+      expect(jsonSchema.validate({ foo: 'z' }).errors).toEqual([{
+        "instancePath": "",
+        "keyword": "discriminator",
+        "message": "value of tag \"foo\" must be in oneOf",
+        "params": {
+          "error": "mapping",
+          "tag": "foo",
+          "tagValue": "z"
+        },
+        "schemaPath": "#/allOf/1/discriminator",
+      }])
+    })
 
     it('validates data uri formats', () => {
       const jsonSchema = new JSONSchema({
