@@ -212,6 +212,98 @@ describe('JSONSchema', () => {
         "schemaPath": "#/oneOf/1/required",
       }])
     })
+
+    it('validates nullable oneOf with discriminator (from using nullable with 3.0)', () => {
+      const jsonSchema = new JSONSchema({
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "name",
+                "type",
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "example": "name",
+                  "default": "name"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "x"
+                  ]
+                },
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "type",
+                "display_name"
+              ],
+              "properties": {
+                "display_name": {
+                  "type": "string",
+                  "default": "name"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "y"
+                  ]
+                },
+              }
+            }
+          ],
+          "discriminator": {
+            "propertyName": "type"
+          }
+        }
+      ]
+      })
+
+      expect(jsonSchema.validate(null).valid).toBe(true)
+      expect(jsonSchema.validate({ type: 'x', name: 'a' }).valid).toBe(true)
+      expect(jsonSchema.validate({ type: 'y', display_name: 'a' }).valid).toBe(true)
+      expect(jsonSchema.validate({ type: 'z', display_name: 'a' }).valid).toBe(false)
+      expect(jsonSchema.validate({ type: 'x' }).valid).toBe(false)
+      expect(jsonSchema.validate({ type: 'x' }).errors).toEqual([
+        {
+            "instancePath": "",
+            "keyword": "type",
+            "message": "must be null",
+            "params": {
+              "type": "null",
+            },
+            "schemaPath": "#/oneOf/0/type",
+          },
+          {
+            "instancePath": "",
+            "keyword": "required",
+            "message": "must have required property 'name'",
+            "params": {
+              "missingProperty": "name",
+            },
+            "schemaPath": "#/oneOf/1/oneOf/0/required",
+          },
+          {
+            "instancePath": "",
+            "keyword": "oneOf",
+            "message": "must match exactly one schema in oneOf",
+            "params": {
+              "passingSchemas": null,
+            },
+            "schemaPath": "#/oneOf",
+          },
+      ])
+    })
     
     it('rejects invalid string not part of a discriminator\'s enum', () => {
       const jsonSchema = new JSONSchema({
