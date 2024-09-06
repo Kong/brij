@@ -2,6 +2,7 @@ import path from 'path'
 import fs from 'fs'
 import yaml from 'js-yaml'
 import SwaggerParser from '@apidevtools/swagger-parser'
+import { OpenAPI } from 'openapi-types';
 import { GenDTO } from './gen-dto'
 
 export interface FileConfig {
@@ -86,9 +87,9 @@ export class GenDTOs {
     return circularRefs
   }
 
-  static replaceNullables(obj: any): any {
+  static replaceNullables(obj: Record<string, any>): Record<string, any> {
     if (!obj || typeof obj !== 'object') {
-      return
+      return {}
     }
 
     let output = JSON.parse(JSON.stringify(obj))
@@ -124,6 +125,76 @@ export class GenDTOs {
     return output
   }
 
+  private static removeMatchingPropertiesFromSchema(schema: any, criteria: Record<string, any>) {
+    if (schema && schema.properties) {
+      return {
+        ...schema,
+        properties: Object.fromEntries(Object.entries(schema.properties).map(([k, v]): any => {
+          if (!v || typeof v !== 'object') {
+            return [k, v]
+          }
+          if (typeof (v as any).properties === 'object') {
+            return [k, this.removeMatchingPropertiesFromSchema(v, criteria)]
+          }
+          for (const c in criteria) {
+            if ((v as any)[c] !== criteria[c]) {
+              return [k, v]
+            }
+          }
+          return null
+        }).filter(Boolean))
+
+      }
+    }
+
+    return schema
+  }
+
+
+  private static async iterateOperations(oas: OpenAPI.Document, fn: (operation: OpenAPI.Operation, path: string, method: string) => Promise<void>) {
+    for (const path in oas.paths) {
+      const pathItem = oas.paths[path]
+
+      for (const method in pathItem) {
+        const operation = (pathItem as any)[method]
+
+        await fn(operation, path, method)
+      }
+    }
+  }
+
+  private static async getRequestBodySchemas(oas: OpenAPI.Document): Promise<Record<string, any>> {
+    const schemas: Record<string, any> = {}
+
+    await this.iterateOperations(oas, async(operation, path, method) => {
+      const schema = (operation as any).requestBody?.content?.['application/json']?.schema
+
+      if (schema) {
+        const key = GenDTO.makeCodeIdentifier(`${operation.operationId ?? `${method}-${path}` }-request-body`)
+        schemas[key] = this.removeMatchingPropertiesFromSchema(schema, { readOnly: true })
+      }
+    })
+
+    return schemas
+  }
+
+  private static async getResponseBodySchemas(oas: OpenAPI.Document): Promise<Record<string, any>> {
+    const schemas: Record<string, any> = {}
+
+    await this.iterateOperations(oas, async(operation, path, method) => {
+      let schema =
+        (operation as any)?.responses?.['200']?.content?.['application/json']?.schema
+        ?? (operation as any)?.responses?.['201']?.content?.['application/json']?.schema
+
+      if (schema) {
+        const key = GenDTO.makeCodeIdentifier(`${operation.operationId ?? `${method}-${path}` }-response-body`)
+        schemas[key] = this.removeMatchingPropertiesFromSchema(schema, { writeOnly: true })
+      }
+    })
+
+    return schemas
+  }
+
   private static async getSchemasFromOAS(args: {
     fileContent: string
     schemasJSONPath: string
@@ -133,22 +204,22 @@ export class GenDTOs {
 
     const lookup = args.schemasJSONPath.split('/').slice(1)
 
-    let current: any = oas
+    let schemas: any = oas
 
     for (const prop of lookup) {
-      if (!current || typeof current !== 'object') {
-        current = null
+      if (!schemas || typeof schemas !== 'object') {
+        schemas = null
         break
       }
 
-      current = current[prop]
-      if (!current) {
+      schemas = schemas[prop]
+      if (!schemas) {
         break
       }
     }
 
     try {
-      JSON.stringify(current)
+      JSON.stringify(schemas)
     } catch (e: any) {
       if (e.message.includes('Converting circular structure to JSON')) {
         if (!args.removeCircular) {
@@ -158,15 +229,26 @@ export class GenDTOs {
       }
     }
 
+    const requestSchemas = await GenDTOs.getRequestBodySchemas(oas)
+    const responseSchemas = await GenDTOs.getResponseBodySchemas(oas)
+
     if (args.removeCircular) {
-      const circularRefs = GenDTOs.removeCircularReferences(current)
+      const circularRefs = [
+        ...GenDTOs.removeCircularReferences(schemas ?? {}),
+        ...GenDTOs.removeCircularReferences(requestSchemas),
+        ...GenDTOs.removeCircularReferences(responseSchemas),
+      ]
 
       if (circularRefs.length) {
         console.log(`  - Removed circular references from schemas: ${JSON.stringify(circularRefs, null, 2)}`)
       }
     }
 
-    return GenDTOs.replaceNullables(current)
+    return {
+      generic: GenDTOs.replaceNullables(schemas ?? {}),
+      request: GenDTOs.replaceNullables(requestSchemas),
+      response: GenDTOs.replaceNullables(responseSchemas),
+    }
   }
 
   private static async parseOAS(content: string) {
@@ -215,7 +297,15 @@ export class GenDTOs {
     const name = GenDTO.stripExtensions(config.filename)
     const sourceAbsPath = GenDTOs.getAbsPath(config.filename, config.sourceDirectory)
     const fileContent = GenDTOs.getFileContent(sourceAbsPath)
-    let schemas: Record<string, any>|undefined
+    let schemas: {
+      generic: Record<string, any>
+      request: Record<string, any>
+      response: Record<string, any>
+    } = {
+      generic: {},
+      request: {},
+      response: {},
+    }
 
     try {
       schemas = await GenDTOs.getSchemasFromOAS({
@@ -235,10 +325,16 @@ export class GenDTOs {
       }
     }
 
-    if (!schemas) {
+    if (!Object.keys(schemas.generic).length) {
       console.warn(`no schemas found at JSON path '${config.schemasJSONPath}' in oas at ${sourceAbsPath}`)
+    }
 
-      return false
+    if (!Object.keys(schemas.request).length) {
+      console.warn(`no request body schemas found in oas at ${sourceAbsPath}`)
+    }
+
+    if (!Object.keys(schemas.response).length) {
+      console.warn(`no response body schemas found in oas at ${sourceAbsPath}`)
     }
 
     const dtoFolder = path.join(config.outputDirectory, name)
@@ -247,8 +343,42 @@ export class GenDTOs {
 
     const dtoFiles: string[] = []
 
-    await Promise.all(Object.entries(schemas).map(async([key, schema]: [string, any]) => {
+    await Promise.all(Object.entries(schemas.generic || {}).map(async([key, schema]: [string, any]) => {
       const outputPath = path.join(dtoFolder, `${key}.ts`)
+
+      try {
+        GenDTO.generateDTO({ schema, outputPath, key })
+      } catch (e) {
+        console.error(`unable to generate DTO for ${key} in ${sourceAbsPath}`)
+
+        return
+      }
+
+      dtoFiles.push(key)
+    }))
+
+    const requestOutputPath = path.join(dtoFolder, 'request')
+    GenDTO.prepareOutputDirectory(requestOutputPath)
+
+    await Promise.all(Object.entries(schemas.request || {}).map(async([key, schema]: [string, any]) => {
+      const outputPath = path.join(requestOutputPath, `${key}.ts`)
+
+      try {
+        GenDTO.generateDTO({ schema, outputPath, key })
+      } catch (e) {
+        console.error(`unable to generate DTO for ${key} in ${sourceAbsPath}`)
+
+        return
+      }
+
+      dtoFiles.push(key)
+    }))
+
+    const responseOutputPath = path.join(dtoFolder, 'response')
+    GenDTO.prepareOutputDirectory(responseOutputPath)
+
+    await Promise.all(Object.entries(schemas.response || {}).map(async([key, schema]: [string, any]) => {
+      const outputPath = path.join(responseOutputPath, `${key}.ts`)
 
       try {
         GenDTO.generateDTO({ schema, outputPath, key })
