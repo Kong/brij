@@ -9,18 +9,17 @@ import { JSONSchema } from '@kong/brij'
 
 export interface SharedObj1 {
   prop1?: string
-  propReadOnly?: string
   propWriteOnly?: string
   nested?: {
-    propReadOnly?: string
     propWriteOnly?: string
     [k: string]: unknown
   }
   [k: string]: unknown
 }
 
+export type PatchThingRequestBody = SharedObj1
 
-class SharedObj1Schema extends JSONSchema {
+class PatchThingRequestBodySchema extends JSONSchema {
   constructor() {
     super({
       "title": "SharedObj1",
@@ -29,10 +28,6 @@ class SharedObj1Schema extends JSONSchema {
         "prop1": {
           "type": "string"
         },
-        "propReadOnly": {
-          "type": "string",
-          "readOnly": true
-        },
         "propWriteOnly": {
           "type": "string",
           "writeOnly": true
@@ -40,10 +35,6 @@ class SharedObj1Schema extends JSONSchema {
         "nested": {
           "type": "object",
           "properties": {
-            "propReadOnly": {
-              "type": "string",
-              "readOnly": true
-            },
             "propWriteOnly": {
               "type": "string",
               "writeOnly": true
@@ -55,4 +46,4 @@ class SharedObj1Schema extends JSONSchema {
   }
 }
 
-export const SharedObj1 = new SharedObj1Schema()
+export const PatchThingRequestBody = new PatchThingRequestBodySchema()

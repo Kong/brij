@@ -1,0 +1,149 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "description": "Brij OAS Example 1",
+    "version": "0.0.1",
+    "title": "Example 1"
+  },
+  "paths": {
+    "/items/{id}/parts/{partId}": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "responseProp1": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "update-item",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "requestProp1": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "responseProp1": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/thing": {
+      "get": {
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Test1"
+          }
+        }
+      },
+      "patch": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SharedObj1"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Test1"
+          }
+        }
+      },
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SharedObj1"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Test1"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "Test1": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SharedObj1"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SharedObj1": {
+        "title": "SharedObj1",
+        "type": "object",
+        "properties": {
+          "prop1": {
+            "type": "string"
+          },
+          "propReadOnly": {
+            "type": "string",
+            "readOnly": true
+          },
+          "propWriteOnly": {
+            "type": "string",
+            "writeOnly": true
+          },
+          "nested": {
+            "type": "object",
+            "properties": {
+              "propReadOnly": {
+                "type": "string",
+                "readOnly": true
+              },
+              "propWriteOnly": {
+                "type": "string",
+                "writeOnly": true
+              }
+            }
+          }
+        } 
+      }
+    }
+  }
+}
