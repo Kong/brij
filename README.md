@@ -53,34 +53,38 @@ Options:
 
 #### Example usage of `dto` command
 Let's say
-- you have an OAS file at `oas/petstore.json`.
+- you have an OAS file at `my-oas/bananas.json`.
   - it should have JSON schemas defined under a certain JSON path, e.g. `#/definitions` or `#/components/schemas`
 - you want to generate TypeScript interfaces and a runtime validator for each schema
-- you want to output the generated code to the `example/dto` directory
+- you want to output the generated code to a `generated/dto` directory
 
 You should run:
 ```
-./index.js dto example/oas example/dto --schemas '\#/definitions'
+./index.js dto my-oas generated/dto --schemas '\#/definitions'
 ```
-The `example` directory will now look like this:
+The `generated` directory will now look like this:
 ```sh
-├── dto                  # generated files that mirror the structure of the source directory
-│   └── petstore
-│       ├── ApiResponse.ts
-│       ├── Category.ts
-│       ├── Order.ts
-│       ├── Pet.ts
-│       ├── Tag.ts
-│       ├── User.ts
-│       └── index.ts
-└── oas                 # OpenAPI files under this directory are parsed for JSON schemas
-    └── petstore.json
+└── dto                  # generated files that mirror the structure of the source directory
+    └── bananas
+        ├── request      # schemas linked to request bodies
+        │   └── PutBananaRequestBody.ts
+        ├── response     # schemas linked to response bodies
+        │   ├── GetBananaResponseBody.ts
+        │   ├── PutBananaResponseBody.ts
+        ├── Banana.ts    # all schemas under the `--schemas` JSON path are output to the top level of the bananas directory
+        └── index.ts
 ```
 
 The `dto` command will:
 - look in all subdirectories of the source directory for any json or yaml files
 - try to parse each file as Swagger/OpenAPI
-- if it is valid OAS, then the properties under the JSON path specified in `--schemas` will each output a DTO file
+- if it is valid OAS,
+  - then the properties under the JSON path specified in `--schemas` will each output a DTO file
+    - readOnly and writeOnly properties in object schemas will both be retained in these schemas
+  - each schema that is found in an operation's `requestBody` will be added to the output directory's `request` directory
+    - writeOnly properties in object schemas will be retained in these schemas, readOnly propeties will be removed
+  - each schema that is found in an operation's `responses` will be added to the output directory's `response` directory
+    - readOnly properties in object schemas will be retained in these schemas, writeOnly properties will be removed
 - generated DTO files contain a TypeScript interface and a JSON schema validator
 - generated DTO filenames will match the key of the schema from the OAS file
   - e.g., if the JSON Schema key in the OAS file is `ApiResponse`, then the generated DTO filename will be `ApiResponse.ts`
