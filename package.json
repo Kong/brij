@@ -16,7 +16,7 @@
   "scripts": {
     "dev": "ts-node ./src/cli/run.ts",
     "dev:watch": "nodemon --ignore example/ --exec \"ts-node\" ./src/cli/run.ts",
-    "example:dto": "yarn dev dto example/oas example/dto --schemas '\\#/definitions' && yarn dev dto example/oas example/dto --schemas '\\#/components/schemas'",
+    "example:dto": "yarn dev dto example/oas/petstore example/dto --schemas '\\#/definitions' && yarn dev dto example/oas/example1 example/dto --schemas '\\#/components/schemas'",
     "example:dto:watch": "yarn dev:watch dto example/oas example/dto --schemas '\\#/definitions'",
     "build": "tsc -p tsconfig.build.json",
     "test": "jest",
