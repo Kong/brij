@@ -163,7 +163,7 @@ export class GenDTOs {
     }
   }
 
-  private static async getRequestBodySchemas(oas: OpenAPI.Document): Promise<Record<string, any>> {
+  static async getRequestBodySchemas(oas: OpenAPI.Document): Promise<Record<string, any>> {
     const schemas: Record<string, any> = {}
 
     await this.iterateOperations(oas, async(operation, path, method) => {
@@ -178,7 +178,7 @@ export class GenDTOs {
     return schemas
   }
 
-  private static async getResponseBodySchemas(oas: OpenAPI.Document): Promise<Record<string, any>> {
+  static async getResponseBodySchemas(oas: OpenAPI.Document): Promise<Record<string, any>> {
     const schemas: Record<string, any> = {}
 
     await this.iterateOperations(oas, async(operation, path, method) => {

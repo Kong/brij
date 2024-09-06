@@ -1,3 +1,4 @@
+import { OpenAPI } from "openapi-types"
 import { GenDTOs } from "./gen-dtos"
 
 describe('GenDTOs', () => {
@@ -347,4 +348,383 @@ describe('GenDTOs', () => {
       })
     })
   })
+  describe('getRequestBodySchemas', () => {
+    it('finds schemas in operation request body', async () => {
+      const oas: OpenAPI.Document = {
+        openapi: '3.0.0',
+        info: {
+          title: 'test',
+          version: '1.0.0'
+        },
+        paths: {
+          '/test': {
+            put: {
+              requestBody: {
+                content: {
+                  'application/json': {
+                    schema: {
+                      title: 'TestOperationRequest1',
+                      type: 'object',
+                    }
+                  }
+                }
+              },
+              responses: {
+                200: {
+                  description: 'ok',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        title: 'TestOperationResponse1',
+                        type: 'object',
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+      }
+
+      expect(await GenDTOs.getRequestBodySchemas(oas)).toEqual({
+        PutTestRequestBody: {
+          title: 'TestOperationRequest1',
+          type: 'object',
+        }
+      })
+    })
+    it('uses operationId for schema name when available', async () => {
+      const oas: OpenAPI.Document = {
+        openapi: '3.0.0',
+        info: {
+          title: 'test',
+          version: '1.0.0'
+        },
+        paths: {
+          '/test': {
+            put: {
+              operationId: 'my-test-operation',
+              requestBody: {
+                content: {
+                  'application/json': {
+                    schema: {
+                      title: 'TestOperationRequest1',
+                      type: 'object',
+                    }
+                  }
+                }
+              },
+              responses: {
+                200: {
+                  description: 'ok',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        title: 'TestOperationResponse1',
+                        type: 'object',
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+      }
+
+      expect(await GenDTOs.getRequestBodySchemas(oas)).toEqual({
+        MyTestOperationRequestBody: {
+          title: 'TestOperationRequest1',
+          type: 'object',
+        }
+      })
+    })
+    it('keeps writeOnly properties and removes readOnly properties', async () => {
+      const oas: OpenAPI.Document = {
+        openapi: '3.0.0',
+        info: {
+          title: 'test',
+          version: '1.0.0'
+        },
+        paths: {
+          '/test': {
+            put: {
+              operationId: 'my-test-operation',
+              requestBody: {
+                content: {
+                  'application/json': {
+                    schema: {
+                      title: 'TestOperationRequest1',
+                      type: 'object',
+                      properties: {
+                        a: {
+                          type: 'string',
+                          readOnly: true,
+                        },
+                        b: {
+                          type: 'string',
+                          writeOnly: true,
+                        },
+                        c: {
+                          type: 'string',
+                        },
+                        nested: {
+                          type: 'object',
+                          properties: {
+                            d: {
+                              type: 'string',
+                              readOnly: true,
+                            },
+                            e: {
+                              type: 'string',
+                              writeOnly: true,
+                            },
+                            f: {
+                              type: 'string',
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              responses: {
+                200: {
+                  description: 'ok',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        title: 'TestOperationResponse1',
+                        type: 'object',
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+      }
+
+      expect(await GenDTOs.getRequestBodySchemas(oas)).toEqual({
+        MyTestOperationRequestBody: {
+          title: 'TestOperationRequest1',
+          type: 'object',
+          properties: {
+            b: {
+              type: 'string',
+              writeOnly: true,
+            },
+            c: {
+              type: 'string',
+            },
+            nested: {
+              properties: {
+                e: {
+                  type: 'string',
+                  writeOnly: true,
+                },
+                f: {
+                  type: 'string',
+                },
+              },
+              type: 'object',
+            }
+          }
+        }
+      })
+    })
+  })
+  describe('getResponseBodySchemas', () => {
+    it('finds schemas in operation response body', async () => {
+      const oas: OpenAPI.Document = {
+        openapi: '3.0.0',
+        info: {
+          title: 'test',
+          version: '1.0.0'
+        },
+        paths: {
+          '/test': {
+            put: {
+              requestBody: {
+                content: {
+                  'application/json': {
+                    schema: {
+                      title: 'TestOperationRequest1',
+                      type: 'object',
+                    }
+                  }
+                }
+              },
+              responses: {
+                200: {
+                  description: 'ok',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        title: 'TestOperationResponse1',
+                        type: 'object',
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+      }
+
+      expect(await GenDTOs.getResponseBodySchemas(oas)).toEqual({
+        PutTestResponseBody: {
+          title: 'TestOperationResponse1',
+          type: 'object',
+        }
+      })
+    })
+    it('uses operationId for schema name when available', async () => {
+      const oas: OpenAPI.Document = {
+        openapi: '3.0.0',
+        info: {
+          title: 'test',
+          version: '1.0.0'
+        },
+        paths: {
+          '/test': {
+            put: {
+              operationId: 'my-test-operation',
+              requestBody: {
+                content: {
+                  'application/json': {
+                    schema: {
+                      title: 'TestOperationRequest1',
+                      type: 'object',
+                    }
+                  }
+                }
+              },
+              responses: {
+                200: {
+                  description: 'ok',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        title: 'TestOperationResponse1',
+                        type: 'object',
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+      }
+
+      expect(await GenDTOs.getResponseBodySchemas(oas)).toEqual({
+        MyTestOperationResponseBody: {
+          title: 'TestOperationResponse1',
+          type: 'object',
+        }
+      })
+    })
+    it('keeps readOnly properties and removes writeOnly properties', async () => {
+      const oas: OpenAPI.Document = {
+        openapi: '3.0.0',
+        info: {
+          title: 'test',
+          version: '1.0.0'
+        },
+        paths: {
+          '/test': {
+            put: {
+              operationId: 'my-test-operation',
+              requestBody: {
+                content: {
+                  'application/json': {
+                    schema: {
+                      title: 'TestOperationRequest1',
+                      type: 'object',
+                    }
+                  }
+                }
+              },
+              responses: {
+                200: {
+                  description: 'ok',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        title: 'TestOperationResponse1',
+                        type: 'object',
+                        properties: {
+                          a: {
+                            type: 'string',
+                            readOnly: true,
+                          },
+                          b: {
+                            type: 'string',
+                            writeOnly: true,
+                          },
+                          c: {
+                            type: 'string',
+                          },
+                          nested: {
+                            type: 'object',
+                            properties: {
+                              d: {
+                                type: 'string',
+                                readOnly: true,
+                              },
+                              e: {
+                                type: 'string',
+                                writeOnly: true,
+                              },
+                              f: {
+                                type: 'string',
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+      }
+
+      expect(await GenDTOs.getResponseBodySchemas(oas)).toEqual({
+        MyTestOperationResponseBody: {
+          title: 'TestOperationResponse1',
+          type: 'object',
+          properties: {
+            a: {
+              type: 'string',
+              readOnly: true,
+            },
+            c: {
+              type: 'string',
+            },
+            nested: {
+              properties: {
+                d: {
+                  type: 'string',
+                  readOnly: true,
+                },
+                f: {
+                  type: 'string',
+                },
+              },
+              type: 'object',
+            }
+          }
+        }
+      })
+    })
+  })
+
 })
