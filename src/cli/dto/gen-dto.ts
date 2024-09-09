@@ -33,9 +33,10 @@ export class GenDTO {
     // export a type alias for the generated schema type so that it can be referenced by the key
     // of the input schema
     const identifier = GenDTO.makeCodeIdentifier(jsonSchema.title)
+    const codifiedKey = GenDTO.makeCodeIdentifier(key)
 
     const typeKeyAlias = identifier && identifier !== key && generatedTsInteface.includes(identifier)
-      ? `export type ${key} = ${identifier}`
+      ? `export type ${codifiedKey} = ${identifier}`
       : undefined
 
     return `/* eslint-disable */
@@ -49,13 +50,13 @@ import { JSONSchema } from '@kong/brij'
 
 ${generatedTsInteface}${typeKeyAlias ? `\n${typeKeyAlias}`: ''}
 
-class ${key}Schema extends JSONSchema {
+class ${codifiedKey}Schema extends JSONSchema {
   constructor() {
     super(${schemaText.split('\n').join('\n    ')})
   }
 }
 
-export const ${key} = new ${key}Schema()
+export const ${codifiedKey} = new ${codifiedKey}Schema()
 `
   }
 
@@ -96,7 +97,7 @@ export const ${key} = new ${key}Schema()
     fs.writeFileSync(indexPath, args.indexExportFiles.map(writeExport).join('\n') + '\n')
   }
 
-  private static makeCodeIdentifier(s: string) {
+  static makeCodeIdentifier(s: string) {
     if (!s) {
       return ''
     }
@@ -105,6 +106,7 @@ export const ${key} = new ${key}Schema()
       .replace(/\s+/g, ' ')
       .replace(/\_+/g, ' ')
       .replace(/\-+/g, ' ')
+      .replace(/\/+/g, ' ')
       .replace(/[^\w\s]/g, '')
       .split(' ')
       .map((s: string) => (s[0]?.toUpperCase() || '') + (s.slice(1) || ''))

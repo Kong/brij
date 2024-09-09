@@ -7,19 +7,23 @@
 
 import { JSONSchema } from '@kong/brij'
 
-export interface SharedObj1 {
+export interface UpdateItemResponseBody {
+  responseProp1?: string
   [k: string]: unknown
 }
 
-export type Test1Response = SharedObj1
 
-class Test1ResponseSchema extends JSONSchema {
+class UpdateItemResponseBodySchema extends JSONSchema {
   constructor() {
     super({
-      "title": "SharedObj1",
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "responseProp1": {
+          "type": "string"
+        }
+      }
     })
   }
 }
 
-export const Test1Response = new Test1ResponseSchema()
+export const UpdateItemResponseBody = new UpdateItemResponseBodySchema()
