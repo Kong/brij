@@ -930,7 +930,7 @@ describe('JSONSchema', () => {
       ])
     })
     describe('option to omit null sibling errors', () => {
-      it('omits null sibling errors for oneOf/anyOf', () => {
+      it('omits null sibling errors for oneOf/anyOf in validate()', () => {
         const jsonSchemaOneOf = new JSONSchema({
           type: 'object',
           oneOf: [
@@ -979,6 +979,36 @@ describe('JSONSchema', () => {
         expect(jsonSchemaAnyOf.validate({ a: 1 }).errors).toEqual([
           {"instancePath": "/a", "keyword": "type", "message": "must be string", "params": {"type": "string"}, "schemaPath": "#/anyOf/1/properties/a/type"},
         ])
+      })
+      it('omits null sibling errors in removeAdditional()', () => {
+        const jsonSchemaOneOf = new JSONSchema({
+          type: 'object',
+          oneOf: [
+            { type: 'null' },
+            {
+              required: ['a'],
+              properties: {
+                a: { type: 'string' },
+              }
+            }
+          ]
+        })
+
+        try { jsonSchemaOneOf.removeAdditional({ a: 1 }, { strict: true }) } catch (e: any) {
+          expect(e.validationErrors).toEqual([
+            {"instancePath": "", "keyword": "type", "message": "must be null", "params": {"type": "null"}, "schemaPath": "#/oneOf/0/type"},
+            {"instancePath": "/a", "keyword": "type", "message": "must be string", "params": {"type": "string"}, "schemaPath": "#/oneOf/1/properties/a/type"},
+            {"instancePath": "", "keyword": "oneOf", "message": "must match exactly one schema in oneOf", "params": { "passingSchemas": null }, "schemaPath": "#/oneOf"}
+          ])
+        }
+
+        JSONSchema.setOptions({ omitNullSiblingErrors: true })
+
+        try { jsonSchemaOneOf.removeAdditional({ a: 1 }, { strict: true }) } catch (e: any) {
+          expect(e.validationErrors).toEqual([
+            {"instancePath": "/a", "keyword": "type", "message": "must be string", "params": {"type": "string"}, "schemaPath": "#/oneOf/1/properties/a/type"},
+          ])
+        }
       })
       it('omits null sibling errors for oneOf/anyOf', () => {
         const jsonSchemaOneOf = new JSONSchema({
