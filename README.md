@@ -214,3 +214,7 @@ export function removeAdditonalProperties(input: ApiResponse): ApiResponse|never
   return input
 }
 ```
+
+##### Using custom `ajv` options
+
+To set custom [ajv options](https://ajv.js.org/options.html) for all JSONSchema instances, use the static `JSONSchema.setAjvOptions(options)` method. These options will override the default options. This method must be called before any instances have been used for validation to ensure that the options are applied.
