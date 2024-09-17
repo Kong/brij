@@ -206,7 +206,7 @@ export class JSONSchema {
     const valid = removeAdditionalFunction(o)
 
     const error = new RemoveAdditionalPropsError(
-      removeAdditionalFunction.errors,
+      this.prepareErrors(removeAdditionalFunction.errors),
       this.schema
     )
 
