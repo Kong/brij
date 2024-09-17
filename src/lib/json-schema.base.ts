@@ -1,18 +1,20 @@
-import Ajv, { ErrorObject, ValidateFunction } from 'ajv'
+import Ajv, { ErrorObject, Options, ValidateFunction } from 'ajv'
 import addFormats from 'ajv-formats'
 import { RemoveAdditionalPropsError } from './errors/remove-additional-props.error'
 
-export const ajv = addFormats(new Ajv({
+export type AjvOptions = Options
+
+const defaultAjvOptions: AjvOptions = {
   discriminator: true,
   strictSchema: false,
   allErrors: true,
-}))
+}
+
+export const ajv = addFormats(new Ajv({ ...defaultAjvOptions }))
 
 export const ajvRemoveAdditional = addFormats(new Ajv({
-  discriminator: true,
-  strictSchema: false,
+  ...defaultAjvOptions,
   removeAdditional: true, // for more info see https://ajv.js.org/guide/modifying-data.html
-  allErrors: true,
 }))
 
 
@@ -30,46 +32,116 @@ export interface ValidationResult {
  * Provides methods for validation and removal of extra properies not allowed in the schema
  */
 export class JSONSchema {
+  private static _ajv: Ajv | null = null
+
+  private static _ajvRemoveAdditional: Ajv | null = null
+
   private _schema: any
 
-  private _validate: ValidateFunction
+  private _validateDefault: ValidateFunction
 
-  private _removeAdditional: ValidateFunction
+  private _validateCustom: ValidateFunction | null = null
 
-  get ajv() {
-    return ajv
+  private _removeAdditionalDefault: ValidateFunction
+
+  private _removeAdditionalCustom: ValidateFunction | null = null
+
+  /**
+   * Set the ajv options for all instances of JSONSchema, overriding the default options.
+   * 
+   * Note: this can only be called once to guarantee that all instances of JSONSchema use the same options.
+   * @param options 
+   */
+  static setAjvOptions(options: AjvOptions) {
+    JSONSchema._ajv = addFormats(new Ajv(options))
+    JSONSchema._ajvRemoveAdditional = addFormats(new Ajv({
+      ...options,
+      removeAdditional: true
+    }))
   }
 
+  /**
+   * Get the ajv instance used by the validate method
+   */
+  get ajv() {
+    return JSONSchema._ajv ?? ajv
+  }
+
+  /**
+   * Get the ajv instance used by the removeAdditional method
+   */
+  get ajvRemoveAdditional() {
+    return JSONSchema._ajvRemoveAdditional ?? ajvRemoveAdditional
+  }
+
+  /**
+   * Get the schema object
+   */
   get schema(): any {
     return JSON.parse(JSON.stringify(this._schema))
   }
 
   constructor(schema: any) {
     this._schema = schema
-    this._validate = ajv.compile(schema)
-    this._removeAdditional = ajvRemoveAdditional.compile(schema)
+    this._validateDefault = this.ajv.compile(schema)
+    this._removeAdditionalDefault = ajvRemoveAdditional.compile(schema)
   }
 
+  private get validateFunction() {
+    if (JSONSchema._ajv && !this._validateCustom) {
+      this._validateCustom = this.ajv.compile(this._schema)
+    }
+
+    return this._validateCustom ?? this._validateDefault
+  }
+
+  private get removeAdditionalFunction() {
+    if (JSONSchema._ajvRemoveAdditional && !this._removeAdditionalCustom) {
+      this._removeAdditionalCustom = this.ajv.compile(this._schema)
+    }
+
+    return this._removeAdditionalCustom ?? this._removeAdditionalDefault
+  }
+
+  /**
+   * Validate an object against the schema
+   * 
+   * @param o 
+   * @returns ValidationResult
+   */
   validate(o: any): ValidationResult {
-    const valid = this._validate(o)
+    const validateFunction = this.validateFunction
+    const valid = validateFunction(o)
 
     return {
       valid,
-      errors: this._validate.errors,
+      errors: validateFunction.errors,
       customMessage: this._schema['x-validation-message']
     }
   }
 
+  /**
+   * Mutates the object by removing properties that aren't allowed in the schema.
+   * If the object is not valid for another reason that having additional properties,
+   * an error is logged with an optional logger.
+   * 
+   * Enable the strict option to instead throw an error if the object is invalid.
+   * 
+   * @param o 
+   * @param options 
+   * @returns 
+   */
   removeAdditional<T>(o: T, options: {
     strict?: boolean
     logger?: { error: (s: string) => void }
     errorLogger?: (s: string) => void
   } = {}): T|never {
     // This mutates the object by removing properties that aren't in the schema
-    const valid = this._removeAdditional(o)
+    const removeAdditionalFunction = this.removeAdditionalFunction
+    const valid = removeAdditionalFunction(o)
 
     const error = new RemoveAdditionalPropsError(
-      this._removeAdditional.errors,
+      removeAdditionalFunction.errors,
       this.schema
     )
 
