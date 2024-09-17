@@ -140,7 +140,6 @@ export class JSONSchema {
   }
 
   private removeNullSiblingErrors(errors: ErrorObject<string, Record<string, any>, unknown>[]) {
-
     const schemaPathsPrefixesToCheck: [string, number][] = []
     const errorsToRemove: number[] = []
 
