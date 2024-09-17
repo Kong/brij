@@ -4,6 +4,10 @@ import { RemoveAdditionalPropsError } from './errors/remove-additional-props.err
 
 export type AjvOptions = Options
 
+export interface JSONSchemaOptions {
+  omitNullSiblingErrors?: boolean
+}
+
 export const defaultAjvOptions: AjvOptions = {
   discriminator: true,
   strictSchema: false,
@@ -36,6 +40,8 @@ export class JSONSchema {
 
   private static _ajvRemoveAdditional: Ajv | null = null
 
+  private static _options: JSONSchemaOptions = {}
+
   private _schema: any
 
   private _validateDefault: ValidateFunction
@@ -61,6 +67,15 @@ export class JSONSchema {
   }
 
   /**
+   * Set JSONSchema options for all instances of JSONSchema.
+   * 
+   * @param options 
+   */
+  static setOptions(options: JSONSchemaOptions) {
+    JSONSchema._options = options ?? {}
+  }
+
+  /**
    * Get the ajv instance used by the validate method
    */
   get ajv() {
@@ -79,6 +94,13 @@ export class JSONSchema {
    */
   get schema(): any {
     return JSON.parse(JSON.stringify(this._schema))
+  }
+
+  /**
+   * Get the JSONSchema options object
+   */
+  get options(): JSONSchemaOptions {
+    return JSONSchema._options
   }
 
   constructor(schema: any) {
@@ -103,6 +125,50 @@ export class JSONSchema {
     return this._removeAdditionalCustom ?? this._removeAdditionalDefault
   }
 
+  private prepareErrors(errors: ErrorObject<string, Record<string, any>, unknown>[] | null | undefined) {
+    if (!errors) {
+      return errors
+    }
+
+    let preparedErrors = [...errors]
+
+    if (this.options.omitNullSiblingErrors) {
+      preparedErrors = this.removeNullSiblingErrors(preparedErrors)
+    }
+
+    return preparedErrors
+  }
+
+  private removeNullSiblingErrors(errors: ErrorObject<string, Record<string, any>, unknown>[]) {
+
+    const schemaPathsPrefixesToCheck: [string, number][] = []
+    const errorsToRemove: number[] = []
+
+    errors.forEach((error, index) => {
+      if (['anyOf', 'oneOf'].includes(error.keyword)) {
+        schemaPathsPrefixesToCheck.push([error.schemaPath, index])
+      }
+    })
+
+    if (schemaPathsPrefixesToCheck.length) {
+      errors.forEach((error, index) => {
+        for (const [prefix, parentIndex] of schemaPathsPrefixesToCheck) {
+          if (error.schemaPath.startsWith(prefix)) {
+            const remainder = error.schemaPath.replace(prefix, '')
+            if (remainder.match(/^\/[0-9]+\/type$/) && error.keyword === 'type' && error.params.type === 'null') {
+              errorsToRemove.push(index)
+              errorsToRemove.push(parentIndex)
+            }
+          }
+        }
+      })
+    }
+
+    return errors.filter((_, index) => {
+      return !errorsToRemove.includes(index)
+    })
+  }
+
   /**
    * Validate an object against the schema
    * 
@@ -115,7 +181,7 @@ export class JSONSchema {
 
     return {
       valid,
-      errors: validateFunction.errors,
+      errors: this.prepareErrors(validateFunction.errors),
       customMessage: this._schema['x-validation-message']
     }
   }
