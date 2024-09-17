@@ -731,4 +731,36 @@ describe('JSONSchema', () => {
       expect(mockFn).toBeCalled()
     })
   })
+
+  describe('setAjvOptions', () => {
+    it('sets the ajv options for each instance', () => {
+      const jsonSchema1 = new JSONSchema({
+        type: 'string',
+        minLength: 1,
+        pattern: 'abc'
+      })
+
+      const jsonSchema2 = new JSONSchema({
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          a: { type: 'number' }
+        }
+      })
+
+      expect(jsonSchema1.validate('').errors).toHaveLength(2)
+      expect(jsonSchema2.validate({
+        a: 'not a number',
+        b: 'not allowed',
+      }).errors).toHaveLength(2)
+
+      JSONSchema.setAjvOptions({ allErrors: false })
+
+      expect(jsonSchema1.validate('').errors).toHaveLength(1)
+      expect(jsonSchema2.validate({
+        a: 'not a number',
+        b: 'not allowed',
+      }).errors).toHaveLength(1)
+    })
+  })
 })
