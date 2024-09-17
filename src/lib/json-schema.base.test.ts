@@ -1010,7 +1010,7 @@ describe('JSONSchema', () => {
           ])
         }
       })
-      it('omits null sibling errors for oneOf/anyOf', () => {
+      it('omits nested null sibling errors for oneOf/anyOf', () => {
         const jsonSchemaOneOf = new JSONSchema({
           type: 'object',
           oneOf: [
