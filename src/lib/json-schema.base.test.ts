@@ -6,6 +6,7 @@ import { JSONSchema7 } from 'json-schema';
 describe('JSONSchema', () => {
   beforeEach(() => {
     JSONSchema.setAjvOptions(defaultAjvOptions)
+    JSONSchema.setOptions({})
   })
   describe('schema', () => {
     it('returns the schema passed in the constructor', () => {
@@ -785,6 +786,265 @@ describe('JSONSchema', () => {
       try { jsonSchema2Custom.removeAdditional({ a: 'not a number', b: 'not allowed', }, { strict: true }) } catch (e: any) {
         expect(e.validationErrors).toHaveLength(1)
       }
+    })
+  })
+
+  describe('oneOf/anyOf error handling', () => {
+    it('reports errors for oneOf', () => {
+      const jsonSchema = new JSONSchema({
+        type: 'object',
+        oneOf: [
+          {
+            required: ['a'],
+            properties: {
+              a: { type: 'number' }
+            }
+          },
+          {
+            required: ['b'],
+            properties: {
+              b: { type: 'string' }
+            }
+          }
+        ]
+      })
+
+      expect(jsonSchema.validate({ a: 'not a number', b: 1 }).errors).toEqual([
+        {
+          instancePath: '/a',
+          keyword: 'type',
+          message: 'must be number',
+          params: {
+            type: 'number',
+          },
+          schemaPath: '#/oneOf/0/properties/a/type',
+        },
+        {
+          instancePath: '/b',
+          keyword: 'type',
+          message: 'must be string',
+          params: {
+            type: 'string',
+          },
+          schemaPath: '#/oneOf/1/properties/b/type',
+        },
+        {
+          instancePath: '',
+          keyword: 'oneOf',
+          message: 'must match exactly one schema in oneOf',
+          params: {
+            passingSchemas: null,
+          },
+          schemaPath: '#/oneOf',
+        },
+      ])
+    })
+    it('reports errors for oneOf with null', () => {
+      const jsonSchema = new JSONSchema({
+        type: 'object',
+        oneOf: [
+          {
+            type: 'null',
+          },
+          {
+            required: ['a'],
+            properties: {
+              a: { type: 'string' }
+            }
+          }
+        ]
+      })
+
+      expect(jsonSchema.validate({ a: 1 }).errors).toEqual([
+        {
+          instancePath: '',
+          keyword: 'type',
+          message: 'must be null',
+          params: {
+            type: 'null',
+          },
+          schemaPath: '#/oneOf/0/type',
+        },
+        {
+          instancePath: '/a',
+          keyword: 'type',
+          message: 'must be string',
+          params: {
+            type: 'string',
+          },
+          schemaPath: '#/oneOf/1/properties/a/type',
+        },
+        {
+          instancePath: '',
+          keyword: 'oneOf',
+          message: 'must match exactly one schema in oneOf',
+          params: {
+            passingSchemas: null,
+          },
+          schemaPath: '#/oneOf',
+        },
+      ])
+    })
+    it('reports errors for anyOf with null', () => {
+      const jsonSchema = new JSONSchema({
+        type: 'object',
+        anyOf: [
+          {
+            type: 'null',
+          },
+          {
+            required: ['a'],
+            properties: {
+              a: { type: 'string' }
+            }
+          }
+        ]
+      })
+
+      expect(jsonSchema.validate({ a: 1 }).errors).toEqual([
+        {
+          instancePath: '',
+          keyword: 'type',
+          message: 'must be null',
+          params: {
+            type: 'null',
+          },
+          schemaPath: '#/anyOf/0/type',
+        },
+        {
+          instancePath: '/a',
+          keyword: 'type',
+          message: 'must be string',
+          params: {
+            type: 'string',
+          },
+          schemaPath: '#/anyOf/1/properties/a/type',
+        },
+        {
+          instancePath: '',
+          keyword: 'anyOf',
+          message: 'must match a schema in anyOf',
+          params: {},
+          schemaPath: '#/anyOf',
+        },
+      ])
+    })
+    describe('option to omit null sibling errors', () => {
+      it('omits null sibling errors for oneOf/anyOf', () => {
+        const jsonSchemaOneOf = new JSONSchema({
+          type: 'object',
+          oneOf: [
+            { type: 'null' },
+            {
+              required: ['a'],
+              properties: {
+                a: { type: 'string' },
+              }
+            }
+          ]
+        })
+
+        const jsonSchemaAnyOf = new JSONSchema({
+          type: 'object',
+          anyOf: [
+            { type: 'null' },
+            {
+              required: ['a'],
+              properties: {
+                a: { type: 'string' },
+              }
+            }
+          ]
+        })
+
+
+        expect(jsonSchemaOneOf.validate({ a: 1 }).errors).toEqual([
+          {"instancePath": "", "keyword": "type", "message": "must be null", "params": {"type": "null"}, "schemaPath": "#/oneOf/0/type"},
+          {"instancePath": "/a", "keyword": "type", "message": "must be string", "params": {"type": "string"}, "schemaPath": "#/oneOf/1/properties/a/type"},
+          {"instancePath": "", "keyword": "oneOf", "message": "must match exactly one schema in oneOf", "params": { "passingSchemas": null }, "schemaPath": "#/oneOf"}
+        ])
+
+        expect(jsonSchemaAnyOf.validate({ a: 1 }).errors).toEqual([
+          {"instancePath": "", "keyword": "type", "message": "must be null", "params": {"type": "null"}, "schemaPath": "#/anyOf/0/type"},
+          {"instancePath": "/a", "keyword": "type", "message": "must be string", "params": {"type": "string"}, "schemaPath": "#/anyOf/1/properties/a/type"},
+          {"instancePath": "", "keyword": "anyOf", "message": "must match a schema in anyOf", "params": {}, "schemaPath": "#/anyOf"}
+        ])
+
+        JSONSchema.setOptions({ omitNullSiblingErrors: true })
+
+        expect(jsonSchemaOneOf.validate({ a: 1 }).errors).toEqual([
+          {"instancePath": "/a", "keyword": "type", "message": "must be string", "params": {"type": "string"}, "schemaPath": "#/oneOf/1/properties/a/type"},
+        ])
+
+        expect(jsonSchemaAnyOf.validate({ a: 1 }).errors).toEqual([
+          {"instancePath": "/a", "keyword": "type", "message": "must be string", "params": {"type": "string"}, "schemaPath": "#/anyOf/1/properties/a/type"},
+        ])
+      })
+      it('omits null sibling errors for oneOf/anyOf', () => {
+        const jsonSchemaOneOf = new JSONSchema({
+          type: 'object',
+          oneOf: [
+            { type: 'null' },
+            {
+              required: ['a'],
+              properties: {
+                a: {
+                  oneOf: [
+                    {
+                      type: 'null' },
+                    { type: 'string' },
+                  ]
+                }
+              }
+            }
+          ]
+        })
+
+        const jsonSchemaAnyOf = new JSONSchema({
+          type: 'object',
+          anyOf: [
+            { type: 'null' },
+            {
+              required: ['a'],
+              properties: {
+                a: { 
+                  anyOf: [
+                    { type: 'null' },
+                    { type: 'string' },
+                  ]
+                }
+              }
+            }
+          ]
+        })
+
+
+        expect(jsonSchemaOneOf.validate({ a: 1 }).errors).toEqual([
+          {"instancePath": "", "keyword": "type", "message": "must be null", "params": {"type": "null"}, "schemaPath": "#/oneOf/0/type"},
+          {"instancePath": "/a", "keyword": "type", "message": "must be null", "params": {"type": "null"}, "schemaPath": "#/oneOf/1/properties/a/oneOf/0/type"},
+          {"instancePath": "/a", "keyword": "type", "message": "must be string", "params": {"type": "string"}, "schemaPath": "#/oneOf/1/properties/a/oneOf/1/type"},
+          {"instancePath": "/a", "keyword": "oneOf", "message": "must match exactly one schema in oneOf", "params": { "passingSchemas": null }, "schemaPath": "#/oneOf/1/properties/a/oneOf"},
+          {"instancePath": "", "keyword": "oneOf", "message": "must match exactly one schema in oneOf", "params": { "passingSchemas": null }, "schemaPath": "#/oneOf"}
+        ])
+
+        expect(jsonSchemaAnyOf.validate({ a: 1 }).errors).toEqual([
+          {"instancePath": "", "keyword": "type", "message": "must be null", "params": {"type": "null"}, "schemaPath": "#/anyOf/0/type"},
+          {"instancePath": "/a", "keyword": "type", "message": "must be null", "params": {"type": "null"}, "schemaPath": "#/anyOf/1/properties/a/anyOf/0/type"},
+          {"instancePath": "/a", "keyword": "type", "message": "must be string", "params": {"type": "string"}, "schemaPath": "#/anyOf/1/properties/a/anyOf/1/type"},
+          {"instancePath": "/a", "keyword": "anyOf", "message": "must match a schema in anyOf", "params": {}, "schemaPath": "#/anyOf/1/properties/a/anyOf"},
+          {"instancePath": "", "keyword": "anyOf", "message": "must match a schema in anyOf", "params": {}, "schemaPath": "#/anyOf"}
+        ])
+
+        JSONSchema.setOptions({ omitNullSiblingErrors: true })
+
+        expect(jsonSchemaOneOf.validate({ a: 1 }).errors).toEqual([
+          {"instancePath": "/a", "keyword": "type", "message": "must be string", "params": {"type": "string"}, "schemaPath": "#/oneOf/1/properties/a/oneOf/1/type"},
+        ])
+
+        expect(jsonSchemaAnyOf.validate({ a: 1 }).errors).toEqual([
+          {"instancePath": "/a", "keyword": "type", "message": "must be string", "params": {"type": "string"}, "schemaPath": "#/anyOf/1/properties/a/anyOf/1/type"},
+        ])
+      })
     })
   })
 })
