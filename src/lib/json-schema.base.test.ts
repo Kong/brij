@@ -1,9 +1,12 @@
 import { randomUUID } from "crypto"
 import { RemoveAdditionalPropsError } from "./errors"
-import { JSONSchema } from "./json-schema.base"
+import { defaultAjvOptions, JSONSchema } from "./json-schema.base"
 import { JSONSchema7 } from 'json-schema';
 
 describe('JSONSchema', () => {
+  beforeEach(() => {
+    JSONSchema.setAjvOptions(defaultAjvOptions)
+  })
   describe('schema', () => {
     it('returns the schema passed in the constructor', () => {
       const s: JSONSchema7 = {
@@ -734,33 +737,54 @@ describe('JSONSchema', () => {
 
   describe('setAjvOptions', () => {
     it('sets the ajv options for each instance', () => {
-      const jsonSchema1 = new JSONSchema({
+      const schema1 = {
         type: 'string',
         minLength: 1,
         pattern: 'abc'
-      })
+      }
 
-      const jsonSchema2 = new JSONSchema({
+      const schema2 = {
         type: 'object',
         additionalProperties: false,
         properties: {
           a: { type: 'number' }
         }
-      })
+      }
+
+      const jsonSchema1 = new JSONSchema(schema1)
+      const jsonSchema2 = new JSONSchema(schema2)
+
+      expect.assertions(8)
 
       expect(jsonSchema1.validate('').errors).toHaveLength(2)
       expect(jsonSchema2.validate({
         a: 'not a number',
         b: 'not allowed',
       }).errors).toHaveLength(2)
+      try { jsonSchema1.removeAdditional('', { strict: true }) } catch (e: any) {
+        expect(e.validationErrors).toHaveLength(2)
+      }
+      try { jsonSchema2.removeAdditional({ a: 'not a number', b: 'not allowed', }, { strict: true }) } catch (e: any) {
+        expect(e.validationErrors).toHaveLength(1) // the b property is removed, so it doesn't count as an error
+      }
 
       JSONSchema.setAjvOptions({ allErrors: false })
 
-      expect(jsonSchema1.validate('').errors).toHaveLength(1)
-      expect(jsonSchema2.validate({
+      const jsonSchema1Custom = new JSONSchema(schema1)
+      const jsonSchema2Custom = new JSONSchema(schema2)
+
+      expect(jsonSchema1Custom.validate('').errors).toHaveLength(1)
+      expect(jsonSchema2Custom.validate({
         a: 'not a number',
         b: 'not allowed',
       }).errors).toHaveLength(1)
+
+      try { jsonSchema1Custom.removeAdditional('', { strict: true }) } catch (e: any) {
+        expect(e.validationErrors).toHaveLength(1)
+      }
+      try { jsonSchema2Custom.removeAdditional({ a: 'not a number', b: 'not allowed', }, { strict: true }) } catch (e: any) {
+        expect(e.validationErrors).toHaveLength(1)
+      }
     })
   })
 })

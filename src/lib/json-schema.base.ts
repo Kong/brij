@@ -4,7 +4,7 @@ import { RemoveAdditionalPropsError } from './errors/remove-additional-props.err
 
 export type AjvOptions = Options
 
-const defaultAjvOptions: AjvOptions = {
+export const defaultAjvOptions: AjvOptions = {
   discriminator: true,
   strictSchema: false,
   allErrors: true,
@@ -84,7 +84,7 @@ export class JSONSchema {
   constructor(schema: any) {
     this._schema = schema
     this._validateDefault = this.ajv.compile(schema)
-    this._removeAdditionalDefault = ajvRemoveAdditional.compile(schema)
+    this._removeAdditionalDefault = this.ajvRemoveAdditional.compile(schema)
   }
 
   private get validateFunction() {
@@ -97,7 +97,7 @@ export class JSONSchema {
 
   private get removeAdditionalFunction() {
     if (JSONSchema._ajvRemoveAdditional && !this._removeAdditionalCustom) {
-      this._removeAdditionalCustom = this.ajv.compile(this._schema)
+      this._removeAdditionalCustom = this.ajvRemoveAdditional.compile(this._schema)
     }
 
     return this._removeAdditionalCustom ?? this._removeAdditionalDefault
