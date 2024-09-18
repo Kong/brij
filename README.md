@@ -218,3 +218,10 @@ export function removeAdditonalProperties(input: ApiResponse): ApiResponse|never
 ##### Using custom `ajv` options
 
 To set custom [ajv options](https://ajv.js.org/options.html) for all JSONSchema instances, use the static `JSONSchema.setAjvOptions(options)` method. These options will override the default options. This method must be called before any instances have been used for validation to ensure that the options are applied.
+
+##### JSONSchema global options
+
+To set global JSONSchema options, use the static `JSONSchema.setOptions(options)` method. These options will be used by all instances of JSONSchema.
+
+Options:
+- `omitNullSiblingErrors` - do not report any errors related to failed `oneOf` or `anyOf` error when one of the child errors is `type must be null`. Only report errors against the non-`"type": "null"` child schemas.
