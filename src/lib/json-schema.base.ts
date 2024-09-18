@@ -161,11 +161,13 @@ export class JSONSchema {
           }
         }
       })
+
+      return errors.filter((_, index) => {
+        return !errorsToRemove.includes(index)
+      })
     }
 
-    return errors.filter((_, index) => {
-      return !errorsToRemove.includes(index)
-    })
+    return errors
   }
 
   /**
