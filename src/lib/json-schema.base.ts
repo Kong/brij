@@ -140,18 +140,18 @@ export class JSONSchema {
   }
 
   private removeNullSiblingErrors(errors: ErrorObject<string, Record<string, any>, unknown>[]) {
-    const schemaPathsPrefixesToCheck: [string, number][] = []
+    const schemaPathPrefixesToCheck: [string, number][] = []
     const errorsToRemove: number[] = []
 
     errors.forEach((error, index) => {
       if (['anyOf', 'oneOf'].includes(error.keyword)) {
-        schemaPathsPrefixesToCheck.push([error.schemaPath, index])
+        schemaPathPrefixesToCheck.push([error.schemaPath, index])
       }
     })
 
-    if (schemaPathsPrefixesToCheck.length) {
+    if (schemaPathPrefixesToCheck.length) {
       errors.forEach((error, index) => {
-        for (const [prefix, parentIndex] of schemaPathsPrefixesToCheck) {
+        for (const [prefix, parentIndex] of schemaPathPrefixesToCheck) {
           if (error.schemaPath.startsWith(prefix)) {
             const remainder = error.schemaPath.replace(prefix, '')
             if (remainder.match(/^\/[0-9]+\/type$/) && error.keyword === 'type' && error.params.type === 'null') {
