@@ -380,6 +380,104 @@ describe('JSONSchema', () => {
       expect(jsonSchema.validate({ data: 'data:image/png;base64,hello' }).valid).toBe(true)
     })
 
+    it('validates https uri formats', () => {
+      const jsonSchema = new JSONSchema({
+        type: 'object',
+        required: [ 'data' ],
+        properties: {
+          data: { type: 'string', format: 'uri', pattern: '^https://[^:.]+\\..+$' },
+        }
+      })
+
+      // valid
+      expect(jsonSchema.validate({ data: 'https://example.com' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://example.com/' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://example.com.' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://example.com/image.png' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://example.com/nested/script.js' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://example.com/k:v' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://example.com/k/v' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://example.com/k/v?q=x' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://example.com/k/v?q%5Bf%5D=x' }).valid).toBe(true) // brackets are uri encoded
+      expect(jsonSchema.validate({ data: 'https://a.b:.' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://a.b:.' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://a.b/:.' }).valid).toBe(true)
+
+      // not valid
+      expect(jsonSchema.validate({ data: 'http://example.com' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'xhttps://example.com' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://example.com/k/v?q[f]=x' }).valid).toBe(false) // brackets [] must be uri encoded
+      expect(jsonSchema.validate({ data: 'example.com' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'example' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https:/' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https:' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'http' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://:' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://:.:' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://.:' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://.:' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://.:.' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://ab/:.' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://a:b.c' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://a:b.' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://a:b' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://.a.b/:.' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'data:image/png,hello' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://data:image/png,hello' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'data:image/png;base64,hello' }).valid).toBe(false)
+    })
+
+    it('validates https://', () => {
+      const jsonSchema = new JSONSchema({
+        type: 'object',
+        required: [ 'data' ],
+        properties: {
+          data: { type: 'string', pattern: '^https://[^:.]+\\..+$' },
+        }
+      })
+
+      // valid
+      expect(jsonSchema.validate({ data: 'https://example.com' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://example.com/' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://example.com.' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://example.com/image.png' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://example.com/nested/script.js' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://example.com/k:v' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://example.com/k/v' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://example.com/k/v?q=x' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://example.com/k/v?q%5Bf%5D=x' }).valid).toBe(true) // brackets are uri encoded
+      expect(jsonSchema.validate({ data: 'https://example.com/k/v?q[f]=x' }).valid).toBe(true) // brackets [] are not uri encoded
+      expect(jsonSchema.validate({ data: 'https://a.b:.' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://a.b:.' }).valid).toBe(true)
+      expect(jsonSchema.validate({ data: 'https://a.b/:.' }).valid).toBe(true)
+
+      // not valid
+      expect(jsonSchema.validate({ data: 'http://example.com' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'xhttps://example.com' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'example.com' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'example' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https:/' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https:' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'http' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://:' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://:.:' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://.:' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://.:' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://.:.' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://ab/:.' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://a:b.c' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://a:b.' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://a:b' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://.a.b/:.' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'data:image/png,hello' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'https://data:image/png,hello' }).valid).toBe(false)
+      expect(jsonSchema.validate({ data: 'data:image/png;base64,hello' }).valid).toBe(false)
+    })
+
     it('accepts x-validation-message property', () => {
       const jsonSchema = new JSONSchema({
         type: 'string',
