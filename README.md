@@ -42,12 +42,13 @@ Usage: brij dto [options] <string> <string>
 Output TypeScript artifacts based on json-schema definitions in OAS files
 
 Arguments:
-  string              source directory with OAS files
-  string              output directory for generated TypeScript files
+  source <string>     source directory with OAS or JSON schema files
+  output <string>     output directory for generated TypeScript files
 
 Options:
   --schemas <string>  JSON path to the section in the OAS with the JSON schemas, e.g. '#/definitions'
   --remove-circular   whether to remove circular references from schemas and treat them as generic objects, rather than fail to generate specs with circular references
+  --no-index-files    skip generation of index.ts files that auto-export all exports in each file in each directory
   -h, --help          display help for command
 ```
 
