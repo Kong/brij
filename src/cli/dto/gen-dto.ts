@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { ajv } from '../../lib/json-schema.base'
 import { compile, Options as TypescriptInterfaceOptions } from 'json-schema-to-typescript'
+import { sample as makeSample } from 'openapi-sampler'
 
 const typescriptInterfaceOptions: Partial<TypescriptInterfaceOptions> = {
   style: {
@@ -136,4 +137,16 @@ export const ${codifiedKey} = new ${codifiedKey}Schema()
     return generated
   }
 
+  static async generateSample(args: {
+    key: string
+    schema: any
+    outputPath?: string
+  }) {
+    const sample = await makeSample(args.schema)
+
+    if (args.outputPath) {
+      fs.writeFileSync(args.outputPath, JSON.stringify(sample, null, 2))
+    }
+    return sample
+  }
 }
