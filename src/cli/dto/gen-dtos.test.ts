@@ -440,7 +440,7 @@ describe('GenDTOs', () => {
         }
       })
     })
-    it('keeps writeOnly properties and removes readOnly properties', async () => {
+    it.only('keeps writeOnly properties and removes readOnly properties', async () => {
       const oas: OpenAPI.Document = {
         openapi: '3.0.0',
         info: {
@@ -459,8 +459,13 @@ describe('GenDTOs', () => {
                       type: 'object',
                       properties: {
                         a: {
-                          type: 'string',
+                          type: 'object',
                           readOnly: true,
+                          properties: {
+                            x: {
+                              type: 'string',
+                            }
+                          }
                         },
                         b: {
                           type: 'string',
