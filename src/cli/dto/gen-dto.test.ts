@@ -48,5 +48,20 @@ describe('GenDTO', () => {
 
       expect(rendered.split('\n')).not.toContain('export type Hello = HelloInThere')
     })
+
+    it('ignores minItems when provided', async () => {
+      const rendered = await GenDTO.renderTypeScriptDTO({ title: 'List', type: 'array', minItems: 3, items: { title: 'Pet', type: 'object', additionalProperties: false, properties: [{ title: 'name', type: 'string' }, { title: 'type', type: 'number' }], required: ['name', 'type'] } }, 'List', { ignoreMinAndMaxItems: true })
+      expect(rendered.split('\n')).toContain('export type List = Pet[]')
+    })
+
+    it('ignores maxItems when provided', async () => {
+      const rendered = await GenDTO.renderTypeScriptDTO({ title: 'List', type: 'array', maxItems: 10, items: { title: 'Pet', type: 'object', additionalProperties: false, properties: [{ title: 'name', type: 'string' }, { title: 'type', type: 'number' }], required: ['name', 'type'] } }, 'List', { ignoreMinAndMaxItems: true })
+      expect(rendered.split('\n')).toContain('export type List = Pet[]')
+    })
+
+    it('ignores minItems and maxItems when provided', async () => {
+      const rendered = await GenDTO.renderTypeScriptDTO({ title: 'List', type: 'array', minItems: 2, maxItems: 20, items: { title: 'Pet', type: 'object', additionalProperties: false, properties: [{ title: 'name', type: 'string' }, { title: 'type', type: 'number' }], required: ['name', 'type'] } }, 'List', { ignoreMinAndMaxItems: true })
+      expect(rendered.split('\n')).toContain('export type List = Pet[]')
+    })
   })
 })

@@ -12,6 +12,7 @@ export interface FileConfig {
   schemasJSONPath?: string
   removeCircular?: boolean
   skipIndexFile?: boolean
+  ignoreMinAndMaxItems?: boolean
 }
 
 export interface CircularRefInfo {
@@ -297,6 +298,9 @@ export class GenDTOs {
     const name = GenDTO.stripExtensions(config.filename)
     const sourceAbsPath = GenDTOs.getAbsPath(config.filename, config.sourceDirectory)
     const fileContent = GenDTOs.getFileContent(sourceAbsPath)
+    const typescriptInterfaceOptions = {
+      ignoreMinAndMaxItems: config.ignoreMinAndMaxItems ?? false
+    }
     let schemas: {
       generic: Record<string, any>
       request: Record<string, any>
@@ -347,7 +351,7 @@ export class GenDTOs {
       const outputPath = path.join(dtoFolder, `${key}.ts`)
 
       try {
-        GenDTO.generateDTO({ schema, outputPath, key })
+        GenDTO.generateDTO({ schema, outputPath, key, typescriptInterfaceOptions })
       } catch (e) {
         console.error(`unable to generate DTO for ${key} in ${sourceAbsPath}`)
 
@@ -364,7 +368,7 @@ export class GenDTOs {
       const outputPath = path.join(requestOutputPath, `${key}.ts`)
 
       try {
-        GenDTO.generateDTO({ schema, outputPath, key })
+        GenDTO.generateDTO({ schema, outputPath, key, typescriptInterfaceOptions })
       } catch (e) {
         console.error(`unable to generate DTO for ${key} in ${sourceAbsPath}`)
 
@@ -381,7 +385,7 @@ export class GenDTOs {
       const outputPath = path.join(responseOutputPath, `${key}.ts`)
 
       try {
-        GenDTO.generateDTO({ schema, outputPath, key })
+        GenDTO.generateDTO({ schema, outputPath, key, typescriptInterfaceOptions })
       } catch (e) {
         console.error(`unable to generate DTO for ${key} in ${sourceAbsPath}`)
 

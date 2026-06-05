@@ -25,8 +25,8 @@ export class GenDTO {
     validate({})
   }
 
-  static async renderTypeScriptDTO(jsonSchema: any, key: string) {
-    const generatedTsInteface = await compile(jsonSchema, key, typescriptInterfaceOptions)
+  static async renderTypeScriptDTO(jsonSchema: any, key: string, typescriptOptions?: Pick<TypescriptInterfaceOptions, 'ignoreMinAndMaxItems'>) {
+    const generatedTsInteface = await compile(jsonSchema, key, { ...typescriptInterfaceOptions, ...typescriptOptions })
     const schemaText = JSON.stringify(jsonSchema, null, 2)
 
     // If the resolved schema title did not match the key (also if the schema was using a $ref),
@@ -118,6 +118,7 @@ export const ${codifiedKey} = new ${codifiedKey}Schema()
     key: string
     schema: any
     outputPath?: string
+    typescriptInterfaceOptions?: Pick<TypescriptInterfaceOptions, 'ignoreMinAndMaxItems'>
   }) {
     try {
       GenDTO.verifyValidatorCompilation(args.schema)
@@ -128,7 +129,7 @@ export const ${codifiedKey} = new ${codifiedKey}Schema()
       throw e
     }
 
-    const generated = await GenDTO.renderTypeScriptDTO(args.schema, args.key)
+    const generated = await GenDTO.renderTypeScriptDTO(args.schema, args.key, args.typescriptInterfaceOptions)
 
     if (args.outputPath) {
       fs.writeFileSync(args.outputPath, generated)
