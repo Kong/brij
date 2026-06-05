@@ -1,4 +1,5 @@
-# NPM publish: add repository secret NPM_TOKEN (automation token with publish rights to @kong/brij).
+# NPM publish: uses npm Trusted Publishing (OIDC). No NPM_TOKEN secret required.
+# Requires npm >= 11.5.1 and the `id-token: write` permission on the publish job.
 name: CI
 on:
   push:
@@ -33,6 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
 
     steps:
       - uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f
@@ -41,16 +43,15 @@ jobs:
         with:
           node-version: 18.x
           registry-url: https://registry.npmjs.org
-          always-auth: true
+      - name: Upgrade npm for Trusted Publishing (OIDC)
+        run: npm install -g npm@latest
       - run: yarn install --frozen-lockfile
       - name: Bump patch version
         run: npm version patch --no-git-tag-version
       - run: yarn build
       - run: yarn bundle:cli
       - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access public --ignore-scripts
+        run: npm publish --access restricted --ignore-scripts
       - name: Commit and push version bump
         run: |
           git config user.name "github-actions[bot]"
