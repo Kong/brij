@@ -53,7 +53,7 @@ jobs:
       - run: yarn build
       - run: yarn bundle:cli
       - name: Publish to npm
-        run: npm publish --ignore-scripts
+        run: npm publish --access restricted --ignore-scripts
       - name: Commit and push version bump
         run: |
           git config user.name "github-actions[bot]"
