@@ -37,6 +37,14 @@ jobs:
       id-token: write
 
     steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
+        id: app-token
+        with:
+          client-id: ${{ vars.KONG_KONNECT_GH_AUTOMATION_ID }}
+          private-key: ${{ secrets.KONG_KONNECT_GH_AUTOMATION_APP_KEY }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
       - uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f
       - name: Use Node.js 22.x
         uses: actions/setup-node@bea5baf987ba7aa777a8a0b4ace377a21c45c381
