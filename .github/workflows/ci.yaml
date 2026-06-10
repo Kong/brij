@@ -37,7 +37,17 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f
+      - name: Generate kong bot app token
+        id: app-token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf
+        with:
+          app-id: ${{ vars.KONG_GH_APP_ID_PUBLIC }}
+          private-key:  ${{ secrets.KONG_GH_APP_PRIVATE_KEY_PUBLIC }}
+          owner: Kong
+      - name: Checkout Source Code
+        uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f
+        with:
+          token: ${{ steps.app-token.outputs.token }}
       - name: Use Node.js 22.x
         uses: actions/setup-node@bea5baf987ba7aa777a8a0b4ace377a21c45c381
         with:
