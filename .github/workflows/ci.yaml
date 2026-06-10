@@ -40,8 +40,8 @@ jobs:
       - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
         id: app-token
         with:
-          client-id: ${{ vars.KONG_KONNECT_GH_AUTOMATION_ID }}
-          private-key: ${{ secrets.KONG_KONNECT_GH_AUTOMATION_APP_KEY }}
+          client-id: ${{ vars.KONG_GH_APP_ID_PUBLIC }}
+          private-key: ${{ secrets.KONG_GH_APP_PRIVATE_KEY_PUBLIC }}
           permission-contents: write
           permission-issues: write
           permission-pull-requests: write
