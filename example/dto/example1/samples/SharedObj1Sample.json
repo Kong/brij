@@ -1,0 +1,9 @@
+{
+  "prop1": "string",
+  "propReadOnly": "string",
+  "propWriteOnly": "string",
+  "nested": {
+    "propReadOnly": "string",
+    "propWriteOnly": "string"
+  }
+}

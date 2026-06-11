@@ -344,6 +344,7 @@ export class GenDTOs {
     const dtoFolder = path.join(config.outputDirectory, name)
 
     GenDTO.prepareOutputDirectory(dtoFolder)
+    GenDTO.prepareOutputDirectory(path.join(dtoFolder, 'samples'))
 
     const dtoFiles: string[] = []
 
@@ -358,11 +359,19 @@ export class GenDTOs {
         return
       }
 
+      try {
+        // generate samples
+        GenDTO.generateSample({ schema, outputPath: path.join(dtoFolder, 'samples', `${key}Sample.json`), key })
+      } catch (e) {
+        console.error(`unable to generate sample for ${key} in ${sourceAbsPath}`)
+      }
+
       dtoFiles.push(key)
     }))
 
     const requestOutputPath = path.join(dtoFolder, 'request')
     GenDTO.prepareOutputDirectory(requestOutputPath)
+    GenDTO.prepareOutputDirectory(path.join(requestOutputPath, 'samples'))
 
     await Promise.all(Object.entries(schemas.request || {}).map(async([key, schema]: [string, any]) => {
       const outputPath = path.join(requestOutputPath, `${key}.ts`)
@@ -375,11 +384,18 @@ export class GenDTOs {
         return
       }
 
+      try {
+        GenDTO.generateSample({ schema, outputPath: path.join(requestOutputPath, 'samples', `${key}Sample.json`), key })
+      } catch (e) {
+        console.error(`unable to generate sample for ${key} in ${sourceAbsPath}`)
+      }
+
       dtoFiles.push(key)
     }))
 
     const responseOutputPath = path.join(dtoFolder, 'response')
     GenDTO.prepareOutputDirectory(responseOutputPath)
+    GenDTO.prepareOutputDirectory(path.join(responseOutputPath, 'samples'))
 
     await Promise.all(Object.entries(schemas.response || {}).map(async([key, schema]: [string, any]) => {
       const outputPath = path.join(responseOutputPath, `${key}.ts`)
@@ -390,6 +406,12 @@ export class GenDTOs {
         console.error(`unable to generate DTO for ${key} in ${sourceAbsPath}`)
 
         return
+      }
+
+      try {
+        GenDTO.generateSample({ schema, outputPath: path.join(responseOutputPath, 'samples', `${key}Sample.json`), key })
+      } catch (e) {
+        console.error(`unable to generate sample for ${key} in ${sourceAbsPath}`)
       }
 
       dtoFiles.push(key)
