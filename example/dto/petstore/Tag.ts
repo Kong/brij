@@ -14,7 +14,7 @@ export interface Tag {
 }
 
 
-class TagSchema extends JSONSchema {
+class TagSchema extends JSONSchema<Tag> {
   constructor() {
     super({
       "type": "object",

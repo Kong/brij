@@ -14,7 +14,7 @@ export interface Category {
 }
 
 
-class CategorySchema extends JSONSchema {
+class CategorySchema extends JSONSchema<Category> {
   constructor() {
     super({
       "type": "object",
